@@ -32,9 +32,6 @@ const pointsMaterial = new THREE.PointsMaterial({
   vertexColors: true
   });
 
-
-
-
 let geometry = new THREE.BufferGeometry();
 
 
@@ -62,7 +59,6 @@ for ( let i = 0; i < particlesCount; i ++ ) {
 geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
 geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
 geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 ).setUsage( THREE.DynamicDrawUsage ) );
-console.log(geometry.size);
 
 //Objects
 const torusGeometry = new THREE.TorusGeometry(.7, .2, 16, 100);
