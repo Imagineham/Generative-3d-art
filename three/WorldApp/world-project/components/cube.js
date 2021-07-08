@@ -1,13 +1,30 @@
-import { BoxBufferGeometry, Mesh, MeshBasicMaterial } from 'https://cdn.skypack.dev/three@0.129.0';
+import { BoxBufferGeometry, Mesh, MeshBasicMaterial, Color } from 'https://cdn.skypack.dev/three@0.129.0';
+
+let numCubes = 6;
+let cubes = [];
 
 function createCube() {
-    const geometry = new BoxBufferGeometry(2, 2, 2);
 
-    const material = new MeshBasicMaterial();
+    for(let i = 0; i < numCubes; i++) {
+        let color = new Color();
+        
+        const geometry = new BoxBufferGeometry(
+            0.5,
+            0.5,
+            i
+            );
 
-    const cube = new Mesh(geometry, material);
+        color.setHSL(Math.random(), 1, 0.5 );
 
-    return cube;
+        const material = new MeshBasicMaterial({
+            color: color
+        });
+
+        const cube = new Mesh(geometry, material);
+        cubes.push(cube);
+    }
+
+    return cubes;
 }
 
 export {createCube};

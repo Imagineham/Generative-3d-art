@@ -1,22 +1,31 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.129.0';
 import {World} from './src/World/World.js';
 
+let container;
+let world;
 
 //main will set up World App 
 function main() {
 
-  const container = document.querySelector('#scene-container');
+  container = document.querySelector('#scene-container');
 
   //World
-  const world = new World();
-
-  console.log(world.camera);
-
+  world = new World(container);
+  
   //Render world
   world.render();
 
 }
 
+//Animate world
+function animate() {
+  requestAnimationFrame(animate);
+  for(let i = 0; i < world.scopes[0].cubescubes.length; i++) {
+    world.scopes[0].cubes[i].rotation.z += 0.05;
+  }
+}
+
+//animate();
+
+
 main();
-
-
