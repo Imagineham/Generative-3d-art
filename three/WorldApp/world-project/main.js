@@ -11,21 +11,18 @@ function main() {
 
   //World
   world = new World(container);
-  
+
   //Render world
   world.render();
-
-}
-
-//Animate world
-function animate() {
-  requestAnimationFrame(animate);
-  for(let i = 0; i < world.scopes[0].cubescubes.length; i++) {
-    world.scopes[0].cubes[i].rotation.z += 0.05;
+    
+  //Animate world
+  function animation() {
+    world.animate();
+    requestAnimationFrame(animation);
   }
+
+  animation();
 }
-
-//animate();
-
 
 main();
+

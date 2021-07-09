@@ -21,7 +21,7 @@ class World {
       cubes = createCube();
       for(let i = 0; i < cubes.length; i++) {
         cubes[i].position.x = i - 3;
-        cubes[i].position.y = i - 2.5;
+        cubes[i].position.y = i - 3;
 
         scene.add(cubes[i]);
       }
@@ -33,6 +33,9 @@ class World {
     render() {
       renderer.render(scene, camera);
     };
+
+    animate() {
+    }
 
 }
   

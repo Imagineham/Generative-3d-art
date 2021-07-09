@@ -1,6 +1,6 @@
 import { BoxBufferGeometry, Mesh, MeshBasicMaterial, Color } from 'https://cdn.skypack.dev/three@0.129.0';
 
-let numCubes = 6;
+let numCubes = 3;
 let cubes = [];
 
 function createCube() {
@@ -11,7 +11,7 @@ function createCube() {
         const geometry = new BoxBufferGeometry(
             0.5,
             0.5,
-            i
+            3
             );
 
         color.setHSL(Math.random(), 1, 0.5 );
