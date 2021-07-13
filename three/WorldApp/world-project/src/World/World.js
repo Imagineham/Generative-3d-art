@@ -1,5 +1,5 @@
 import { createCamera } from '../../components/camera.js';
-import { createCube } from '../../components/cube.js';
+import { createCube, createCubeMatrix } from '../../components/cube.js';
 import { createScene } from '../../components/scene.js';
 
 import { createRenderer } from '../../systems/renderer.js';
@@ -18,12 +18,19 @@ class World {
       renderer = createRenderer();
       container.append(renderer.domElement);
 
-      cubes = createCube();
-      for(let i = 0; i < cubes.length; i++) {
-        cubes[i].position.x = i - 3;
-        cubes[i].position.y = i - 3;
+      cubes = createCubeMatrix();
+      for(let row = 0; row < cubes.length; row++) {
+        for(let col = 0; col < cubes.length; col++) {
+          cubes[row][col].position.x = col - 2;
+          cubes[row][col].position.y = row - 2;
+          
+          /*
+          cubes[row][col].rotation.x = Math.random() * row;
+          cubes[row][col].rotation.y = Math.random() * col;
+          */
 
-        scene.add(cubes[i]);
+          scene.add(cubes[row][col]);
+        }
       }
 
       const resizer = new Resizer(camera, renderer, container);
@@ -34,8 +41,17 @@ class World {
       renderer.render(scene, camera);
     };
 
-    animate() {
-    }
+    animate(seconds) {
+
+      for(let row = 0; row < cubes.length; row++) {
+        for(let col = 0; col < cubes.length; col++) {
+          cubes[row][col].rotation.x += (row / 500) + 0.001;
+          cubes[row][col].rotation.y += (row / 500) + 0.001;
+          cubes[row][col].rotation.z += (row / 500) + 0.007;
+          cubes[row][col].rotation.z += (col / 500) + 0.007;
+        }
+      }
+    };
 
 }
   

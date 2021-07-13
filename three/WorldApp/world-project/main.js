@@ -3,6 +3,7 @@ import {World} from './src/World/World.js';
 
 let container;
 let world;
+let start = Date.now();
 
 //main will set up World App 
 function main() {
@@ -12,16 +13,19 @@ function main() {
   //World
   world = new World(container);
 
-  //Render world
-  world.render();
-    
-  //Animate world
-  function animation() {
-    world.animate();
-    requestAnimationFrame(animation);
-  }
+  //Render and Animate world
+  animate();
 
-  animation();
+}
+
+function animate() {
+  let seconds = Math.floor((Date.now() - start) / 1000);
+  console.log(seconds);
+  requestAnimationFrame(animate);
+
+  world.render();
+
+  world.animate(seconds);
 }
 
 main();
