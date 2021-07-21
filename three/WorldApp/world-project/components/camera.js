@@ -3,7 +3,7 @@ import { PerspectiveCamera } from 'https://cdn.skypack.dev/three@0.129.0';;
 function createCamera() {
     const camera = new PerspectiveCamera(
         35,
-        1,
+        document.clientWidth/document.clientHeight,
         0.1,
         100
     );

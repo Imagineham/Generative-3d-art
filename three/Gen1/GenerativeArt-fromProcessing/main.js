@@ -23,6 +23,40 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
+//Listing i1 Constants
+let xstart = Math.random() * 10;
+let ynoise = Math.random() * 10;
+
+const canvas = document.querySelector('#canvas');
+
+if (canvas.getContext) {
+
+    const ctx = canvas.getContext('2d');
+
+    // translate
+    ctx.translate(150, 150);
+    console.log(ctx);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const radius = 50;
 const particlesCount = 1000;

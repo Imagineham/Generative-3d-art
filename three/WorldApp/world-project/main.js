@@ -26,6 +26,9 @@ function animate() {
   world.render();
 
   world.animate(seconds);
+
+
+  
 }
 
 main();

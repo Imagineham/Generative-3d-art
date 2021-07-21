@@ -1,17 +1,21 @@
 import { BoxBufferGeometry, Mesh, MeshBasicMaterial, Color } from 'https://cdn.skypack.dev/three@0.129.0';
 
-let numCubes = 5;
+
+const numCubes = 5;
+const cubeWidth = 0.5;
+const cubeHeight = 0.5;
+const cubeDepth = 0; 
 
 function createCube() {
     let color = new Color();
         
     const geometry = new BoxBufferGeometry(
-        0.5,
-        0.5,
-        0
+        cubeWidth,
+        cubeHeight,
+        cubeDepth
         );
 
-    color.setHSL(Math.random(), 1, 0.5);
+    color.setHSL(Math.random(), Math.random(), Math.random());
 
     const material = new MeshBasicMaterial({
         color: color
@@ -40,5 +44,6 @@ function createCubeMatrix() {
 
 }
 
+export {numCubes, cubeWidth, cubeHeight, cubeDepth};
 export {createCube};
 export {createCubeMatrix};
