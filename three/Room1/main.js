@@ -16,8 +16,18 @@ let gui, world;
 //loader
 let loader;
 
+//drawing Canvas constants
+let ballMaterial;
+const drawStartPos = new THREE.Vector2();
+
+const mouse = {
+  x: undefined,
+  y: undefined
+}
 
 init();
+setupCanvasDrawing();
+animate();
 
 function init() {
 
@@ -43,13 +53,13 @@ canvas = renderer.domElement;
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(canvas);
+window.addEventListener( 'resize', onWindowResize );
 
 //Raycaster init
 raycaster = new THREE.Raycaster();
 
 //Orbit Controls
 controls = new OrbitControls(camera, canvas);
-console.log(controls);
 
 //Gui init
 gui = new dat.GUI();
@@ -85,7 +95,7 @@ const scale = 5;
 const bottomGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight * scale);
 const bottomMaterial = new THREE.MeshPhongMaterial({
   color: "red",
-  side: THREE.DoubleSide
+  side: THREE.DoubleSide,
 });
 const bottom = new THREE.Mesh(bottomGeometry, bottomMaterial);
 bottom.position.set(0,-planeHeight/2,0);
@@ -102,7 +112,6 @@ const top = new THREE.Mesh(topGeometry, topMaterial);
 top.position.set(0,planeHeight/2,0);
 top.rotation.x = Math.PI/2;
 scene.add(top);
-console.log(top);
 
 //Left Plane
 const leftGeometry = new THREE.PlaneGeometry(planeWidth * scale, planeHeight);
@@ -169,7 +178,7 @@ borderPlane.rotation.y = Math.PI/2;
 scene.add(borderPlane);
 
 const ballGeometry = new THREE.SphereGeometry(0.4, 32, 32);
-const ballMaterial = new THREE.MeshPhongMaterial({
+ballMaterial = new THREE.MeshPhongMaterial({
   //color: "white",
   map: loader.load('./images/gamerjibe_test.jpg')
 })
@@ -185,11 +194,6 @@ render();
 
 function render() {
   renderer.render(scene, camera);
-}
-
-const mouse = {
-  x: undefined,
-  y: undefined
 }
 
 function animate() {
@@ -222,9 +226,79 @@ function animate() {
   render();
 }
 
-animate();
-
 addEventListener('mousemove', (event) => {
   mouse.x = (event.clientX / innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / innerHeight) * 2 + 1;
 })
+
+function onWindowResize() {
+
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+
+function setupCanvasDrawing() {
+
+  // get canvas and context
+
+  const drawingCanvas = document.getElementById( 'drawing-canvas' );
+	const drawingContext = drawingCanvas.getContext( '2d' );
+
+  // draw white background
+  drawingContext.fillStyle = '#FFFFFF';
+	drawingContext.fillRect( 0, 0, 128, 128 );
+
+  drawingContext.fillRect( 0, 0, 128, 128 );
+
+  // set canvas as material.map (this could be done to any map, bump, displacement etc.)
+
+  ballMaterial.map = new THREE.CanvasTexture( drawingCanvas );
+
+  // set the variable to keep track of when to draw
+
+  let paint = false;
+
+  // add canvas event listeners
+  drawingCanvas.addEventListener( 'pointerdown', function ( e ) {
+
+    paint = true;
+    drawStartPos.set( e.offsetX, e.offsetY );
+
+  } );
+
+  drawingCanvas.addEventListener( 'pointermove', function ( e ) {
+
+    if ( paint ) draw( drawingContext, e.offsetX, e.offsetY );
+
+  } );
+
+  drawingCanvas.addEventListener( 'pointerup', function () {
+
+    paint = false;
+
+  } );
+
+  drawingCanvas.addEventListener( 'pointerleave', function () {
+
+    paint = false;
+
+  } );
+
+}
+
+function draw( drawContext, x, y ) {
+
+  drawContext.moveTo( drawStartPos.x, drawStartPos.y );
+  drawContext.strokeStyle = '#000000';
+  drawContext.lineTo( x, y );
+  drawContext.stroke();
+  // reset drawing start position to current position.
+  drawStartPos.set( x, y );
+  // need to flag the map as needing updating.
+  ballMaterial.map.needsUpdate = true;
+
+}
