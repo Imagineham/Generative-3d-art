@@ -1,7 +1,7 @@
 import { BoxBufferGeometry, Mesh, MeshBasicMaterial, Color } from 'https://cdn.skypack.dev/three@0.129.0';
 
 
-const numCubes = 5;
+const numCubes = 10;
 const cubeWidth = 0.5;
 const cubeHeight = 0.5;
 const cubeDepth = 0; 

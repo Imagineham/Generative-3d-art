@@ -43,8 +43,8 @@ const planeMesh = new THREE.Mesh(plane, planeMaterial);
 scene.add(planeMesh);
 
 
-const light = new THREE.DirectionalLight(0xFFFFFF, 1);
-light.position.set(0, 0, 1);
+const light = new THREE.PointLight( 0xff0000, 1, 100 );
+light.position.set(0, 0, 0);
 scene.add(light);
 
 const backlight = new THREE.DirectionalLight(0xFFFFFF, 1);

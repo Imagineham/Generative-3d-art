@@ -4,6 +4,12 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.129.0/examples/js
 //import gsap from 'gsap';
 
 
+//texture loader
+
+const loader = new THREE.TextureLoader();
+const star = loader.load("./mario star.png");
+
+
 // Scene
 const scene = new THREE.Scene();
 
@@ -15,7 +21,7 @@ const camera = new THREE.
     0.1,
     1000
     );
-camera.position.z = 20;
+camera.position.z = 10;
 
 //Renderer
 const renderer = new THREE.WebGLRenderer();
@@ -29,7 +35,9 @@ const particlesCount = 1000;
 
 const pointsMaterial = new THREE.PointsMaterial({
   depthTest: false,
-  vertexColors: true
+  vertexColors: true,
+  map: star,
+  transparent: true
   });
 
 let geometry = new THREE.BufferGeometry();

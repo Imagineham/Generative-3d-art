@@ -24,7 +24,7 @@ class World {
         for(let col = 0; col < CUBES.numCubes; col++) {
           console.log("CONTAINER WIDTH = " + renderer.getSize().x, "CONTAINER HEIGHTS = " + container.clientHeight);
 
-          cubes[row][col].position.x = row - (2);
+          cubes[row][col].position.x = row - (4.5);
           cubes[row][col].position.y = -col + 2 + CUBES.cubeHeight;
           
           /*

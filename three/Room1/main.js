@@ -2,6 +2,7 @@ import './style.css'
 import * as THREE from 'https://cdn.skypack.dev/three@0.129.0';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/controls/OrbitControls.js'
 import gsap from 'gsap';
+import { Lut } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/math/Lut.js';
 import * as dat from 'dat.gui';
 
 //Constants
@@ -16,8 +17,14 @@ let gui, world;
 //loader
 let loader;
 
+//Rotating shapes
+let ball, box;
+
+//colormapping
+let lut, params;
+
 //drawing Canvas constants
-let ballMaterial;
+let ballMaterial, boxMaterial, imgGeometry, imgMaterial;
 const drawStartPos = new THREE.Vector2();
 
 const mouse = {
@@ -61,6 +68,14 @@ raycaster = new THREE.Raycaster();
 //Orbit Controls
 controls = new OrbitControls(camera, canvas);
 
+
+//lut init
+lut = new Lut();
+
+params = {
+  colorMap: 'rainbow',
+};
+
 //Gui init
 gui = new dat.GUI();
 world = {
@@ -68,12 +83,13 @@ world = {
     width: 2
   }
 }
-gui.add(world.plane, "width", 1, 10).onChange(() => {
-  closePlane.geometry.dispose();
-  closePlane.geometry = new THREE.PlaneGeometry(world.plane.width, 2);
-  console.log(closePlane.geometry);
+
+gui.add( params, 'colorMap', [ 'rainbow', 'cooltowarm', 'blackbody', 'grayscale' ] ).onChange( function () {
+
+  updateColors();
   render();
-});
+
+} );
 
 //Loader init
 loader = new THREE.TextureLoader();
@@ -134,7 +150,7 @@ const rightMaterial = new THREE.MeshPhongMaterial({
 const right = new THREE.Mesh(rightGeometry, rightMaterial);
 right.position.set(planeHeight/2,0,0);
 right.rotation.y = -Math.PI/2;
-scene.add(right);
+//scene.add(right);
 
 //Closest Plane
 const closeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
@@ -156,16 +172,24 @@ const farPlane = new THREE.Mesh(farGeometry, farMaterial);
 farPlane.position.set(0,0,-planeWidth/2);
 //scene.add(farPlane);
 
-const frameGeometry = new THREE.PlaneGeometry(planeWidth/2, planeHeight/2);
-const frameMaterial = new THREE.MeshPhongMaterial({
-  //color: "purple"
+imgGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+imgMaterial = new THREE.MeshPhongMaterial({
+  //color: "purple",
+  //colorWrite: false,
   side: THREE.DoubleSide,
-  map: loader.load('./images/gamerjibe_test.jpg')
+  map: loader.load('./images/gamerjibe_test.jpg'),
+  //alphaMap: loader.load('./images/bubble_texture.jpg')
+  //vertexColors: true
 });
-const framePlane = new THREE.Mesh(frameGeometry, frameMaterial);
-framePlane.position.set(-planeWidth/2 + 0.001,0,0);
-framePlane.rotation.y = Math.PI/2;
-scene.add(framePlane);
+console.log(imgMaterial.alphaMap);
+
+const imgPlane = new THREE.Mesh(imgGeometry, imgMaterial);
+imgPlane.position.set(-planeWidth/2 + 0.001,0,0);
+imgPlane.rotation.y = Math.PI/2;
+
+console.log(imgPlane.color);
+
+scene.add(imgPlane);
 
 const borderGeometry = new THREE.PlaneGeometry(planeWidth/2 + 0.05, planeHeight/2 + 0.05);
 const borderMaterial = new THREE.MeshPhongMaterial({
@@ -177,14 +201,24 @@ borderPlane.position.set(-planeWidth/2 + 0.0005,0,0);
 borderPlane.rotation.y = Math.PI/2;
 scene.add(borderPlane);
 
-const ballGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+const ballGeometry = new THREE.SphereGeometry(0.6, 32, 32);
 ballMaterial = new THREE.MeshPhongMaterial({
   //color: "white",
   map: loader.load('./images/gamerjibe_test.jpg')
 })
-const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+ball = new THREE.Mesh(ballGeometry, ballMaterial);
 ball.position.set(0,0,-3);
 scene.add(ball);
+
+
+const boxGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+boxMaterial = new THREE.MeshPhongMaterial({
+  //color: "white",
+  map: loader.load('./images/gamerjibe_test.jpg')
+})
+box = new THREE.Mesh(boxGeometry, boxMaterial);
+box.position.set(0,0,2);
+scene.add(box);
 
 
 
@@ -198,6 +232,9 @@ function render() {
 
 function animate() {
   requestAnimationFrame(animate);
+
+  ball.rotation.y += 0.005;
+  box.rotation.y += 0.005;
 
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(scene.children);
@@ -240,6 +277,15 @@ function onWindowResize() {
 
 }
 
+function setupLut() {
+
+  boxMaterial.map = new THREE.CanvasTexture( lut.createCanvas() )
+
+
+}
+
+
+
 
 function setupCanvasDrawing() {
 
@@ -257,6 +303,7 @@ function setupCanvasDrawing() {
   // set canvas as material.map (this could be done to any map, bump, displacement etc.)
 
   ballMaterial.map = new THREE.CanvasTexture( drawingCanvas );
+  boxMaterial.map = ballMaterial.map;
 
   // set the variable to keep track of when to draw
 
@@ -300,5 +347,44 @@ function draw( drawContext, x, y ) {
   drawStartPos.set( x, y );
   // need to flag the map as needing updating.
   ballMaterial.map.needsUpdate = true;
+
+}
+
+
+
+function updateColors() {
+
+  lut.setColorMap( params.colorMap );
+
+  lut.setMax( 2000 );
+  lut.setMin( 0 );
+
+  const geometry = mesh.geometry;
+  const pressures = geometry.attributes.pressure;
+  const colors = geometry.attributes.color;
+
+  for ( let i = 0; i < pressures.array.length; i ++ ) {
+
+    const colorValue = pressures.array[ i ];
+
+    const color = lut.getColor( colorValue );
+
+    if ( color === undefined ) {
+
+      console.log( 'Unable to determine color for value:', colorValue );
+
+    } else {
+
+      colors.setXYZ( i, color.r, color.g, color.b );
+
+    }
+
+  }
+
+  colors.needsUpdate = true;
+
+  const map = sprite.material.map;
+  lut.updateCanvas( map.image );
+  map.needsUpdate = true;
 
 }
