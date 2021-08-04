@@ -1,0 +1,24 @@
+/* NOTE: Don't edit this file. Only swatches.js. */
+
+* {
+  font-family: Garamond, serif;
+  color: #888888;
+}
+
+h2 {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 50px;
+  margin-bottom: 10px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+canvas {
+  border: 3px solid #888888;
+  border-radius: 20px;
+}

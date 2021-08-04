@@ -1,12 +1,11 @@
 import './style.css'
 import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/build/three.module.js';
 import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/controls/OrbitControls.js';
-import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/GLTFLoader.js';
 import {EffectComposer} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/RenderPass.js';
-import {ShaderPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/ShaderPass.js';
 import {GUI} from 'https://threejsfundamentals.org/threejs/../3rdparty/dat.gui.module.js';
-import dat from 'dat.gui';
+import {FilmPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/FilmPass.js';
+
 
 //Constants
 let scene, camera, renderer, canvas, raycaster, INTERSECTED;
@@ -45,7 +44,7 @@ function init() {
   near = 0.1; 
   far = 1000;
   camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
-  camera.position.set(0,3,3);
+
 
   //Renderer init
   renderer = new THREE.WebGLRenderer();
@@ -60,10 +59,26 @@ function init() {
 
   //Orbit Controls
   controls = new OrbitControls(camera, canvas);
+  camera.position.set(2,3,0);
+
+  controls.update();
 
   //Loader init
   loader = new THREE.TextureLoader();
   const gamerJibe = loader.load('./images/gamerjibe_test.jpg');
+  const polkaDots = loader.load('./images/polkaDots.png');
+  const honeycomb = loader.load('./images/honeycomb.png');
+  const argyle = loader.load('./images/argyle.png');
+  const checks = loader.load('./images/checks.png');
+  const chevron = loader.load('./images/chevron.png');
+
+  const skyBoxtexture = loader.load(
+    './images/blackAndWhiteRoom.jpg',
+    () => {
+      const rt = new THREE.WebGLCubeRenderTarget(skyBoxtexture.image.height);
+      rt.fromEquirectangularTexture(renderer, skyBoxtexture);
+      //scene.background = rt.texture;
+    });
 
   //Light
   const light = new THREE.AmbientLight( 0xffffff ); // soft white light
@@ -76,8 +91,7 @@ function init() {
 
   //floor plane
   const floorGeo = new THREE.PlaneGeometry(planeWidth * scale, planeHeight * scale * 5);
-  const floorMat = new THREE.MeshPhongMaterial({
-    color: "red",
+  const floorMat = new THREE.MeshNormalMaterial({
     side: THREE.DoubleSide,
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -103,18 +117,23 @@ function init() {
     side: THREE.DoubleSide
   });
   const left = new THREE.Mesh(leftGeometry, leftMaterial);
-  left.position.set(-(planeWidth * scale)/2,2,0);
+  left.position.set(-(planeWidth * scale)/2,4,0);
   left.rotation.y = Math.PI/2;
   scene.add(left);
 
   //Right Plane
+  argyle.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  argyle.matrixAutoUpdate = false;
+  argyle.wrapS = argyle.wrapT = THREE.RepeatWrapping;
+  argyle.matrix.scale(5, 0.7);
+  argyle.matrix.rotate(0);
+  render();
   const rightGeometry = new THREE.PlaneGeometry(planeHeight * scale * 5, planeHeight * 5);
   const rightMaterial = new THREE.MeshPhongMaterial({
-    color: "green",
-    side: THREE.DoubleSide,
+    map: argyle,
   });
   const right = new THREE.Mesh(rightGeometry, rightMaterial);
-  right.position.set((planeWidth * scale)/2,2,0);
+  right.position.set((planeWidth * scale)/2,4,0);
   right.rotation.y = -Math.PI/2;
   scene.add(right);
 
@@ -142,19 +161,80 @@ function init() {
   imgMaterial = new THREE.MeshPhongMaterial({
     //color: "purple",
     side: THREE.DoubleSide,
-    map: gamerJibe,
   });
 
   const imgPlane = new THREE.Mesh(imgGeometry, imgMaterial);
-  imgPlane.position.set(-(planeWidth * scale)/2 + 0.005,3,0);
+  imgPlane.position.set(-(planeWidth * scale)/2 + 0.05,3,0);
   imgPlane.rotation.y = Math.PI/2;
+  imgPlane.material.map = gamerJibe;
+  imgPlane.material.map.flipY = true;
 
+  ///other images////
+  const polkaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
+  const polkaMaterial = new THREE.MeshPhongMaterial({
+    //color: "purple",
+    side: THREE.DoubleSide,
+  });
+
+  const polkaPlane = new THREE.Mesh(polkaGeometry, polkaMaterial);
+  polkaPlane.position.set(-(planeWidth * scale)/2 + 0.05,3,25);
+  polkaPlane.rotation.y = Math.PI/2;
+  polkaPlane.material.map = polkaDots;
+
+  const hexaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
+  const hexaMaterial = new THREE.MeshPhongMaterial({
+    //color: "purple",
+    side: THREE.DoubleSide,
+  });
+
+  const hexaPlane = new THREE.Mesh(hexaGeometry, hexaMaterial);
+  hexaPlane.position.set(-(planeWidth * scale)/2 + 0.05,3,50);
+  hexaPlane.rotation.y = Math.PI/2;
+  hexaPlane.material.map = honeycomb;
+
+  const chevGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
+  const chevMaterial = new THREE.MeshPhongMaterial({
+    //color: "purple",
+    side: THREE.DoubleSide,
+  });
+
+  const chevPlane = new THREE.Mesh(chevGeometry, chevMaterial);
+  chevPlane.position.set(-(planeWidth * scale)/2 + 0.05,3,-25);
+  chevPlane.rotation.y = Math.PI/2;
+  chevPlane.material.map = chevron;
+
+  const checksGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
+  const checksMaterial = new THREE.MeshPhongMaterial({
+    //color: "purple",
+    side: THREE.DoubleSide,
+  });
+
+  const checksPlane = new THREE.Mesh(checksGeometry, checksMaterial);
+  checksPlane.position.set(-(planeWidth * scale)/2 + 0.05,3,-50);
+  checksPlane.rotation.y = Math.PI/2;
+  checksPlane.material.map = checks;
+
+
+  ///add art to scene!
   scene.add(imgPlane);
+  scene.add(polkaPlane);
+  scene.add(hexaPlane);
+  scene.add(chevPlane);
+  scene.add(checksPlane);
+
+
+
+
+
+  scene.add(polkaPlane);
+
+
+
+
 
   const borderGeometry = new THREE.PlaneGeometry((planeWidth * scale / 4) + 0.2, (planeHeight * scale / 4) + 0.2);
   const borderMaterial = new THREE.MeshPhongMaterial({
-    color: "black",
-    side: THREE.DoubleSide,
+    color: "black"
   });
   const borderPlane = new THREE.Mesh(borderGeometry, borderMaterial);
   borderPlane.position.set(-(planeWidth * scale)/2 + 0.003,3,0);
@@ -162,9 +242,8 @@ function init() {
   scene.add(borderPlane);
 
   const ballGeometry = new THREE.SphereGeometry(100, 32, 32);
-  ballMaterial = new THREE.MeshPhongMaterial({
-    //color: "white",
-    map: gamerJibe,
+  ballMaterial = new THREE.MeshNormalMaterial({
+    wireframe: true,
     side: THREE.DoubleSide
   })
   ball = new THREE.Mesh(ballGeometry, ballMaterial);
@@ -172,174 +251,52 @@ function init() {
   scene.add(ball);
 
 
-  const boxGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+  const boxGeometry = new THREE.BoxGeometry(50, 50, 150);
   boxMaterial = new THREE.MeshPhongMaterial({
     //color: "white",
-    map: loader.load('./images/gamerjibe_test.jpg')
+    map: gamerJibe,
+    side: THREE.DoubleSide,
+    wireframe: true
   })
   box = new THREE.Mesh(boxGeometry, boxMaterial);
-  box.position.set(0,0,2);
+  box.position.set(0,0,0);
+  //box.material.map.flipY = false;
   scene.add(box);
 
 
-  const makeIdentityLutTexture = function() {
-    const identityLUT = new Uint8Array([
-        0,   0,   0, 255,  // black
-      255,   0,   0, 255,  // red
-        0,   0, 255, 255,  // blue
-      255,   0, 255, 255,  // magenta
-        0, 255,   0, 255,  // green
-      255, 255,   0, 255,  // yellow
-        0, 255, 255, 255,  // cyan
-      255, 255, 255, 255,  // white
-    ]);
 
-    return function(filter) {
-      const texture = new THREE.DataTexture(identityLUT, 4, 2, THREE.RGBAFormat);
-      texture.minFilter = filter;
-      texture.magFilter = filter;
-      texture.needsUpdate = true;
-      texture.flipY = false;
-      return texture;
-    };
-  }();
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  console.log(composer);
+	const filmPass = new FilmPass(
+		1,   // noise intensity
+		0.025,  // scanline intensity
+		648,    // scanline count
+		true,  // grayscale
+	);
 
-  lutTextures = [
-    {
-      name: 'identity',
-      size: 2,
-      filter: true,
-      texture: makeIdentityLutTexture(THREE.LinearFilter),
-    },
-    {
-      name: 'identity not filtered',
-      size: 2,
-      filter: false,
-      texture: makeIdentityLutTexture(THREE.NearestFilter),
-    },
-  ];
-
-  const lutNameIndexMap = {};
-  lutTextures.forEach((info, ndx) => {
-    lutNameIndexMap[info.name] = ndx;
-  });
-
-  lutSettings = {
-    lut: lutNameIndexMap.identity,
-  };
-  const gui = new GUI({ width: 300 });
-  gui.add(lutSettings, 'lut', lutNameIndexMap);
-
-  const lutShader = {
-    uniforms: {
-      tDiffuse: { value: null },  // the previous pass's result
-      lutMap:  { value: null },
-      lutMapSize: { value: 1, },
-    },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-      }
-    `,
-    fragmentShader: `
-      #include <common>
-
-      uniform sampler2D tDiffuse;
-      uniform sampler2D lutMap;
-      uniform float lutMapSize;
-
-      varying vec2 vUv;
-
-      vec4 sampleAs3DTexture(sampler2D tex, vec3 texCoord, float size) {
-        float sliceSize = 1.0 / size;                  // space of 1 slice
-        float slicePixelSize = sliceSize / size;       // space of 1 pixel
-        float width = size - 1.0;
-        float sliceInnerSize = slicePixelSize * width; // space of size pixels
-        float zSlice0 = floor( texCoord.z * width);
-        float zSlice1 = min( zSlice0 + 1.0, width);
-        float xOffset = slicePixelSize * 0.5 + texCoord.x * sliceInnerSize;
-        float yRange = (texCoord.y * width + 0.5) / size;
-        float s0 = xOffset + (zSlice0 * sliceSize);
-
-        #ifdef FILTER_LUT
-
-          float s1 = xOffset + (zSlice1 * sliceSize);
-          vec4 slice0Color = texture2D(tex, vec2(s0, yRange));
-          vec4 slice1Color = texture2D(tex, vec2(s1, yRange));
-          float zOffset = mod(texCoord.z * width, 1.0);
-          return mix(slice0Color, slice1Color, zOffset);
-
-        #else
-
-          return texture2D(tex, vec2( s0, yRange));
-
-        #endif
-      }
-
-      void main() {
-        vec4 originalColor = texture2D(tDiffuse, vUv);
-        gl_FragColor = sampleAs3DTexture(lutMap, originalColor.xyz, lutMapSize);
-      }
-    `,
-  };
-
-  const lutNearestShader = {
-    uniforms: {...lutShader.uniforms},
-    vertexShader: lutShader.vertexShader,
-    fragmentShader: lutShader.fragmentShader.replace('#define FILTER_LUT', '//'),
-  };
-
-  effectLUT = new ShaderPass(lutShader);
-  effectLUT.renderToScreen = true;
-  effectLUTNearest = new ShaderPass(lutNearestShader);
-  effectLUTNearest.renderToScreen = true;
-
-  const renderModel = new RenderPass(scene, camera);
-  renderModel.clear = false;  // so we don't clear out the background
-
-  const rtParameters = {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBFormat,
-  };
-  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, rtParameters));
-
-  composer.addPass(renderModel);
-  composer.addPass(effectLUT);
-  composer.addPass(effectLUTNearest);
-
-  requestAnimationFrame(render);
+	//filmPass.enabled = false;
+  filmPass.renderToScreen = true;
+	composer.addPass(filmPass);
+  composer.setSize(canvas.width, canvas.height);
+    
 
 }
 
-function render(now) {
-  now *= 0.001;  // convert to seconds
-  const delta = now - then;
-  then = now;
-
-  const lutInfo = lutTextures[lutSettings.lut];
-
-  const effect = lutInfo.filter ? effectLUT : effectLUTNearest;
-  effectLUT.enabled = lutInfo.filter;
-  effectLUTNearest.enabled = !lutInfo.filter;
-
-  const lutTexture = lutInfo.texture;
-  effect.uniforms.lutMap.value = lutTexture;
-  effect.uniforms.lutMapSize.value = lutInfo.size;
-
-  composer.render(0);
+function render() {
   renderer.render(scene, camera);
 }
 
 function animate() {
   requestAnimationFrame(animate);
+  //composer.render();
 
-  ball.rotation.y += 0.005;
-  box.rotation.y += 0.005;
+  ball.rotation.y += 0.001;
+  ball.rotation.x += 0.001;
+  ball.rotation.z -= 0.001;
+  box.rotation.z += 0.005;
 
-  raycaster.setFromCamera(mouse, camera);
+  /* raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(scene.children);
 
   if ( intersects.length > 0 ) {
@@ -360,7 +317,8 @@ function animate() {
 
     INTERSECTED = null;
 
-  }
+  }\
+  */
 
   controls.update();
   render();
