@@ -125,12 +125,13 @@ function init() {
   argyle.anisotropy = renderer.capabilities.getMaxAnisotropy();
   argyle.matrixAutoUpdate = false;
   argyle.wrapS = argyle.wrapT = THREE.RepeatWrapping;
-  argyle.matrix.scale(5, 0.7);
-  argyle.matrix.rotate(0);
+  argyle.matrix.scale(10, 0.7);
+  argyle.matrix.rotate(2);
   render();
   const rightGeometry = new THREE.PlaneGeometry(planeHeight * scale * 5, planeHeight * 5);
   const rightMaterial = new THREE.MeshPhongMaterial({
     map: argyle,
+    side: THREE.DoubleSide
   });
   const right = new THREE.Mesh(rightGeometry, rightMaterial);
   right.position.set((planeWidth * scale)/2,4,0);
@@ -226,12 +227,6 @@ function init() {
 
 
 
-  scene.add(polkaPlane);
-
-
-
-
-
   const borderGeometry = new THREE.PlaneGeometry((planeWidth * scale / 4) + 0.2, (planeHeight * scale / 4) + 0.2);
   const borderMaterial = new THREE.MeshPhongMaterial({
     color: "black"
@@ -260,7 +255,7 @@ function init() {
   })
   box = new THREE.Mesh(boxGeometry, boxMaterial);
   box.position.set(0,0,0);
-  //box.material.map.flipY = false;
+  box.material.map.flipY = false;
   scene.add(box);
 
 
@@ -269,7 +264,7 @@ function init() {
   composer.addPass(new RenderPass(scene, camera));
   console.log(composer);
 	const filmPass = new FilmPass(
-		1,   // noise intensity
+		0.35,   // noise intensity
 		0.025,  // scanline intensity
 		648,    // scanline count
 		true,  // grayscale
@@ -289,6 +284,8 @@ function render() {
 
 function animate() {
   requestAnimationFrame(animate);
+  controls.update();
+  render();
   //composer.render();
 
   ball.rotation.y += 0.001;
@@ -319,9 +316,6 @@ function animate() {
 
   }\
   */
-
-  controls.update();
-  render();
 }
 
 addEventListener('mousemove', (event) => {
