@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "vite": "^2.4.4"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.7"
   }
 }
