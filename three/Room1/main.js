@@ -31,7 +31,7 @@ const rtWidth = 512;
  * the raycaster does not need to check if everything is being selected
  * just artworks
  */
-let artworks = [];
+let artworks = [], renderTargets = [], currentArtworkIndex;
 
 //main camera parameters
 let fov, aspectRatio, near, far, controls; 
@@ -42,7 +42,7 @@ let loader;
 let ball, box;
 
 //drawing Canvas constants
-let ballMaterial, boxMaterial, gamerJibeGeo, gamerjibeMat;
+let ballMaterial, boxMaterial;
 init();
 //setupCanvasDrawing();
 animate();
@@ -50,7 +50,6 @@ animate();
 function init() {
 
   //render targets!
-  const filmRenderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
   const mainRenderTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, rtParameters);
 
   //Scene init
@@ -174,9 +173,9 @@ function init() {
   farPlane.position.set(0,0,-planeWidth/2);
   //scene.add(farPlane);
 
-  gamerJibeGeo = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
-  gamerjibeMat = new THREE.MeshPhongMaterial({
-    map: filmRenderTarget.texture,
+  const gamerJibeGeo = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
+  const gamerjibeMat = new THREE.MeshPhongMaterial({
+    map: gamerJibe,
     side: THREE.DoubleSide,
   });
   const gamerjibeMesh = new THREE.Mesh(gamerJibeGeo, gamerjibeMat);
@@ -240,8 +239,29 @@ function init() {
   artworks.push(gamerjibeMesh, polkaMesh, hexaMesh, chevronMesh, checksMesh);
 
   //for each artwork created its render Target scene
-  gamerjibeScene = makeArtScene(gamerJibe);
-  gamerjibeComposer = makeFilmComposer(gamerjibeScene, filmRenderTarget);
+  for(const art of artworks) {
+
+    const filmRenderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
+
+    let artScene = makeArtScene(art.material.map); 
+    let artComposer = makeFilmComposer(artScene, filmRenderTarget)
+    renderTargets.push({
+      "root": artScene,
+      "composer": artComposer
+    });
+  }
+
+  console.log(renderTargets[0].composer.renderTarget2.texture);
+  for(let i = 0; i < artworks.length; i++) {
+    artworks[i].material.map = renderTargets[i].composer.renderTarget2.texture;
+  }
+
+
+  //gamerjibeMesh.material.map = renderTargets[0].composer.renderTarget2.texture;
+
+
+  //gamerjibeScene = makeArtScene(gamerJibe);
+  //gamerjibeComposer = makeFilmComposer(gamerjibeScene, filmRenderTarget);
   //let polkaScene = makeArtScene(polkaDots);
   //let hexaScene = makeArtScene(hexagons);
   //let chevronScene = makeArtScene(chevron);
@@ -290,8 +310,15 @@ function init() {
 function render() {
   //renderer.render(mainScene, mainCamera);
   controls.object = mainCamera;
-  gamerjibeComposer.passes[1].enabled = true;
-  gamerjibeComposer.render();
+  for(let i = 0; i < renderTargets.length; i++) {
+    renderTargets[i].composer.passes[1].enabled = true;
+    renderTargets[i].composer.render();
+  }
+
+  //renderTargets[currentArtworkIndex].composer.passes[1].enabled = true;
+  //renderTargets[currentArtworkIndex].composer.render();
+  //gamerjibeComposer.passes[1].enabled = true;
+  //gamerjibeComposer.render();
   mainComposer.render();
   CLICK = false;
 }
@@ -302,10 +329,14 @@ function animate() {
 
   
   if(!CLICK) {
+      renderTargets[0].composer.passes[1].enabled = true;
+      renderTargets[0].composer.render();
     render();
   } else {
-    controls.object = gamerjibeScene.camera;
-    gamerjibeComposer.render();
+    controls.object = renderTargets[currentArtworkIndex].root.camera;  
+    //gamerjibeScene.camera;
+    renderTargets[currentArtworkIndex].composer.render();
+    //amerjibeComposer.render();
   }
   
 
@@ -323,6 +354,7 @@ function animate() {
       INTERSECTED = intersects[ 0 ].object;
       INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
       INTERSECTED.material.emissive.setHex( 0xAFAFAF );
+      console.log(INTERSECTED);
     }
   } else {
     if (INTERSECTED) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
@@ -347,10 +379,14 @@ addEventListener('mousemove', (event) => {
 
 addEventListener('click', () => {
   if(INTERSECTED && !CLICK) {
+
+    currentArtworkIndex = (artworks.indexOf(INTERSECTED))
+
     gui = new dat.GUI();
     folder1 = gui.addFolder('FilmPass');
     //the first pass is the renderpass! 
-    folder1.add(gamerjibeComposer.passes[1], 'enabled');
+    console.log(currentArtworkIndex);
+    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1], 'enabled');
     CLICK = true;
   } else {
     //CLICK = false;
@@ -397,7 +433,7 @@ function makeArtScene(texture) {
   rtScene.add( plane );
 
   artScene.scene = rtScene;
-  artScene.camera = rtCamera
+  artScene.camera = rtCamera;
 
   return artScene;
 }
