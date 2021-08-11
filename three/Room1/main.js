@@ -63,7 +63,9 @@ function init() {
   mainCamera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
 
   //Renderer init
-  renderer = new THREE.WebGLRenderer();
+  renderer = new THREE.WebGLRenderer({
+    preserveDrawingBuffer: true
+  });
   canvas = renderer.domElement;
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(devicePixelRatio);
@@ -83,7 +85,7 @@ function init() {
   const polkaDots = loader.load('./images/polkaDots.png');
   const hexagons = loader.load('./images/honeycomb.png');
   const argyle = loader.load('./images/argyle.png');
-  const checks = loader.load('./images/checks.png');
+  const checks = loader.load('./images/Lines2.png');
   const chevron = loader.load('./images/chevron.png');
 
   const skyBoxtexture = loader.load(
@@ -361,6 +363,22 @@ function animate() {
     INTERSECTED = null;
   }
 
+
+    //renderTargets[4].root.scene.children[1].rotation.x += 0.001;
+    //renderTargets[4].root.scene.children[1].rotation.y += 0.001;
+    //renderTargets[4].root.scene.children[1].rotation.z += 0.001;
+    renderTargets[4].root.scene.add(ball)
+    renderTargets[4].root.scene.children[2].rotation.y += 0.02;
+    renderTargets[4].root.scene.children[2].rotation.z += 0.001;
+
+
+    const ballGeometry = new THREE.SphereGeometry(100, 32, 32);
+  ballMaterial = new THREE.MeshNormalMaterial({
+    wireframe: true,
+    side: THREE.DoubleSide
+  })
+  ball = new THREE.Mesh(ballGeometry, ballMaterial);
+  ball.position.set(0,0,-3);
 }
 
 function onWindowResize() {
@@ -383,10 +401,14 @@ addEventListener('click', () => {
     currentArtworkIndex = (artworks.indexOf(INTERSECTED))
 
     gui = new dat.GUI();
-    folder1 = gui.addFolder('FilmPass');
+    folder1 = gui.addFolder('FilmPass');       
     //the first pass is the renderpass! 
     console.log(currentArtworkIndex);
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1], 'enabled');
+    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.nIntensity, 'value').min(0).max(1).name("noise intensity");
+    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.sIntensity, 'value').min(0).max(1).name("scanline intensity")
+    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.sCount, 'value').min(0).max(4096).name("scanline count")
+    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.grayscale, 'value').name("grayscale")
     CLICK = true;
   } else {
     //CLICK = false;
@@ -398,6 +420,9 @@ addEventListener('keydown', (e) => {
   if (e.keyCode === 27) {
     gui.destroy();
     render();
+    canvas.toBlob((blob) => {
+      saveBlob(blob, `screencapture-${renderTargets[currentArtworkIndex].composer.width}x${renderTargets[currentArtworkIndex].composer.height}.png`)
+    }); 
   } else {
   }
 })
@@ -418,7 +443,7 @@ function makeArtScene(texture) {
   const rtFar = 500;
   const rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
   rtCamera.position.z = 12;
-
+  
   //add light source to scene
   const ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
   
@@ -461,7 +486,25 @@ function makeFilmComposer(artScene, renderTarget) {
 
 
 
+const saveBlob = (function() {
+  const a = document.createElement('a');
+  document.body.appendChild(a);
+  a.style.display = 'none';
+  return function saveData(blob, fileName) {
+    console.log(blob);
+    const url = window.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = fileName;
+    a.click();
+  }
+}());
 
+
+function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
 
 
 
