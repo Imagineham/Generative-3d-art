@@ -131,7 +131,7 @@ function frameArea(sizeToFitOnScreen, boxSize, boxCenter, camera) {
       const root = gltf.scene;
       cars = root.getObjectByName('Cars');
       scene.add(root);
-      console.log(dumpObject(root).join('\n'));
+      //console.log(dumpObject(root).join('\n'));
 
       // compute the box that contains all the stuff
       // from root and below
