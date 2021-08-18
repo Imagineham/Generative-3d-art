@@ -5,6 +5,9 @@ import {EffectComposer} from 'https://threejsfundamentals.org/threejs/resources/
 import {RenderPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/RenderPass.js';
 import * as dat from 'dat.gui';
 import {FilmPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/FilmPass.js';
+import {OBJLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/OBJLoader.js';
+import {MTLLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/MTLLoader.js';
+import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/GLTFLoader.js';
 
 
 //Constants
@@ -15,7 +18,7 @@ let mouse = {
   x: undefined,
   y: undefined
 }
-let gui, folder1;
+let gui, folder1, folder2;
 
 const rtWidth = 512;
   const rtHeight = 512;
@@ -36,7 +39,7 @@ let artworks = [], renderTargets = [], currentArtworkIndex;
 //main camera parameters
 let fov, aspectRatio, near, far, controls; 
 //loader
-let loader;
+let loader, objLoader, mtlLoader;
 
 //Rotating shapes
 let ball, box;
@@ -253,7 +256,6 @@ function init() {
     });
   }
 
-  console.log(renderTargets[0].composer.renderTarget2.texture);
   for(let i = 0; i < artworks.length; i++) {
     artworks[i].material.map = renderTargets[i].composer.renderTarget2.texture;
   }
@@ -305,7 +307,46 @@ function init() {
   mainComposer = new EffectComposer(renderer, mainRenderTarget);
   mainComposer.addPass(new RenderPass(mainScene, mainCamera));
   mainComposer.setSize(canvas.width, canvas.height);
-    
+  console.log("controls" + controls.object)
+
+
+
+  ///////OBJ LOADER////////////////////////////////
+  {
+  const planeSize = 40;
+
+  const loader = new THREE.TextureLoader();
+  const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.NearestFilter;
+  const repeats = planeSize / 2;
+  texture.repeat.set(repeats, repeats);
+
+  const planeGeo = new THREE.PlaneGeometry(planeSize, planeSize);
+  const planeMat = new THREE.MeshPhongMaterial({
+    map: texture,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(planeGeo, planeMat);
+  mesh.position.set(0,-3,0);
+  mesh.rotation.x = Math.PI * -.5;
+  renderTargets[3].root.scene.add(mesh);
+  }
+
+
+  console.log(renderTargets[3].root.scene.remove(renderTargets[3].root.scene.children[1]));
+  mtlLoader = new MTLLoader();
+  mtlLoader.load('models/windmill_001.mtl', (mtl) => {
+    mtl.preload();
+    mtl.materials.Material.side = THREE.DoubleSide;
+    objLoader = new OBJLoader();
+    objLoader.setMaterials(mtl);
+    objLoader.load('models/windmill_001.obj', (root) => {
+      root.position.set(0,-3,0);
+      renderTargets[3].root.scene.add(root);
+    });
+  });
 
 }
 
@@ -356,7 +397,6 @@ function animate() {
       INTERSECTED = intersects[ 0 ].object;
       INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
       INTERSECTED.material.emissive.setHex( 0xAFAFAF );
-      console.log(INTERSECTED);
     }
   } else {
     if (INTERSECTED) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
@@ -365,20 +405,12 @@ function animate() {
 
 
     //renderTargets[4].root.scene.children[1].rotation.x += 0.001;
-    //renderTargets[4].root.scene.children[1].rotation.y += 0.001;
+    renderTargets[4].root.scene.children[1].rotation.y += 0.001;
     //renderTargets[4].root.scene.children[1].rotation.z += 0.001;
-    renderTargets[4].root.scene.add(ball)
-    renderTargets[4].root.scene.children[2].rotation.y += 0.02;
-    renderTargets[4].root.scene.children[2].rotation.z += 0.001;
-
-
-    const ballGeometry = new THREE.SphereGeometry(100, 32, 32);
-  ballMaterial = new THREE.MeshNormalMaterial({
-    wireframe: true,
-    side: THREE.DoubleSide
-  })
-  ball = new THREE.Mesh(ballGeometry, ballMaterial);
-  ball.position.set(0,0,-3);
+    //renderTargets[4].root.scene.add(ball)
+    //renderTargets[4].root.scene.children[2].rotation.y += 0.02;
+    //renderTargets[4].root.scene.children[2].rotation.z += 0.001;
+    
 }
 
 function onWindowResize() {
@@ -401,7 +433,8 @@ addEventListener('click', () => {
     currentArtworkIndex = (artworks.indexOf(INTERSECTED))
 
     gui = new dat.GUI();
-    folder1 = gui.addFolder('FilmPass');       
+    folder1 = gui.addFolder('FilmPass');
+    folder2 = gui.addFolder('Lighting');       
     //the first pass is the renderpass! 
     console.log(currentArtworkIndex);
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1], 'enabled');
@@ -409,6 +442,11 @@ addEventListener('click', () => {
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.sIntensity, 'value').min(0).max(1).name("scanline intensity")
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.sCount, 'value').min(0).max(4096).name("scanline count")
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.grayscale, 'value').name("grayscale")
+    console.log(renderTargets[currentArtworkIndex].root.scene);
+    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'r').min(0).max(1);
+    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'g').min(0).max(1);
+    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'b').min(0).max(1);
+    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0], 'intensity').min(0).max(1);
     CLICK = true;
   } else {
     //CLICK = false;
@@ -416,14 +454,31 @@ addEventListener('click', () => {
 })
 
 addEventListener('keydown', (e) => {
-  //27 is ESC
-  if (e.keyCode === 27) {
-    gui.destroy();
-    render();
-    canvas.toBlob((blob) => {
-      saveBlob(blob, `screencapture-${renderTargets[currentArtworkIndex].composer.width}x${renderTargets[currentArtworkIndex].composer.height}.png`)
-    }); 
-  } else {
+  console.log(e.keyCode);
+
+  switch(e.keyCode) {
+    case 27: // 'ESC'
+      if(gui) {
+        gui.destroy();
+      }
+      render();
+      break;
+    case 67:
+      if (renderTargets[currentArtworkIndex]) {
+        //console.log(renderTargets[currentArtworkIndex].root.scene.children[1].geometry.parameters.width);
+        //controls.object.fov = renderTargets[currentArtworkIndex].root.scene.children[1].geometry.parameters.width;
+        //controls.object.updateProjectionMatrix();
+        controls.object.position.set(0,0,14)
+      }
+      controls.update();
+      break;
+    case 83: //'S' foir screenshot
+      canvas.toBlob((blob) => {
+        saveBlob(blob, `Piece-${currentArtworkIndex}.png`)
+      });
+      break;
+    default: 
+    break;
   }
 })
 
@@ -437,12 +492,12 @@ function makeArtScene(texture) {
   const rtScene = new THREE.Scene();
 
   //create render target Camera
-  const rtFov = 75;
+  let rtFov = 75;
   const rtAspect = rtWidth / rtHeight;
   const rtNear = 0.1;
   const rtFar = 500;
-  const rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
-  rtCamera.position.z = 12;
+  let rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
+  rtCamera.position.z = 14;
   
   //add light source to scene
   const ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
