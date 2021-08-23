@@ -20,6 +20,11 @@ let mouse = {
 }
 let gui, folder1, folder2;
 
+
+let spotlightBool = {
+  helperEnabled: true
+}
+
 const rtWidth = 512;
   const rtHeight = 512;
   let rtParameters = { 
@@ -84,11 +89,11 @@ function init() {
 
   //Loader init
   loader = new THREE.TextureLoader();
-  const gamerJibe = loader.load('./images/gamerjibe_test.jpg');
-  const polkaDots = loader.load('./images/polkaDots.png');
-  const hexagons = loader.load('./images/honeycomb.png');
+  const gamerJibe = loader.load('./images/kanagawa.jpg');
+  const polkaDots = loader.load('./images/monet.jpg');
+  const hexagons = loader.load('./images/gogh.jpg');
   const argyle = loader.load('./images/argyle.png');
-  const checks = loader.load('./images/Lines2.png');
+  const checks = loader.load('./images/monetSnow.jpg');
   const chevron = loader.load('./images/chevron.png');
 
   const skyBoxtexture = loader.load(
@@ -100,7 +105,7 @@ function init() {
     });
 
   //Light
-  const light = new THREE.AmbientLight( 0xffffff ); // soft white light
+  const light = new THREE.AmbientLight( 0xffffff, 0.1 ); // soft white light
   mainScene.add( light );
 
   //Planes
@@ -186,6 +191,15 @@ function init() {
   const gamerjibeMesh = new THREE.Mesh(gamerJibeGeo, gamerjibeMat);
   gamerjibeMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,0);
   gamerjibeMesh.rotation.y = Math.PI/2;
+  {
+    const spotLight = new THREE.SpotLight( 0xcfcfcf );
+    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,0);
+    mainScene.add( spotLight );
+    spotLight.target = gamerjibeMesh;
+    spotLight.angle = Math.PI/5.5;
+  }
+
+
 
   ///other images////
   const polkaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
@@ -195,9 +209,16 @@ function init() {
   });
 
   const polkaMesh = new THREE.Mesh(polkaGeometry, polkaMaterial);
-  polkaMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,25);
+  polkaMesh.position.set(-(planeWidth * scale)/2 + 1,3,25);
   polkaMesh.rotation.y = Math.PI/2;
   polkaMesh.material.map = polkaDots;
+  {
+    const spotLight = new THREE.SpotLight( 0xcfcfcf );
+    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,25);
+    mainScene.add( spotLight );
+    spotLight.target = polkaMesh;
+    spotLight.angle = Math.PI/5.5;
+  }
 
   const hexaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
   const hexaMaterial = new THREE.MeshPhongMaterial({
@@ -209,6 +230,13 @@ function init() {
   hexaMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,50);
   hexaMesh.rotation.y = Math.PI/2;
   hexaMesh.material.map = hexagons;
+  {
+    const spotLight = new THREE.SpotLight( 0xcfcfcf );
+    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,50);
+    mainScene.add( spotLight );
+    spotLight.target = hexaMesh;
+    spotLight.angle = Math.PI/5.5;
+  }
 
   const chevGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
   const chevMaterial = new THREE.MeshPhongMaterial({
@@ -220,6 +248,13 @@ function init() {
   chevronMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,-25);
   chevronMesh.rotation.y = Math.PI/2;
   chevronMesh.material.map = chevron;
+  {
+    const spotLight = new THREE.SpotLight( 0xcfcfcf );
+    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,-25);
+    mainScene.add( spotLight );
+    spotLight.target = chevronMesh;
+    spotLight.angle = Math.PI/5.5;
+  }
 
   const checksGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
   const checksMaterial = new THREE.MeshPhongMaterial({
@@ -231,6 +266,13 @@ function init() {
   checksMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,-50);
   checksMesh.rotation.y = Math.PI/2;
   checksMesh.material.map = checks;
+  {
+    const spotLight = new THREE.SpotLight( 0xcfcfcf );
+    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,-50);
+    mainScene.add( spotLight );
+    spotLight.target = checksMesh;
+    spotLight.angle = Math.PI/5.5;
+  }
 
 
   ///add art to scene!
@@ -312,7 +354,7 @@ function init() {
 
 
   ///////OBJ LOADER////////////////////////////////
-  console.log(renderTargets[3].root.scene.remove(renderTargets[3].root.scene.children[1]));
+  renderTargets[3].root.scene.remove(renderTargets[3].root.scene.children[2]);
   mtlLoader = new MTLLoader();
   mtlLoader.load('models/windmill_001.mtl', (mtl) => {
     mtl.preload();
@@ -320,10 +362,32 @@ function init() {
     objLoader = new OBJLoader();
     objLoader.setMaterials(mtl);
     objLoader.load('models/windmill_001.obj', (root) => {
-      root.position.set(0,-3,0);
+      root.position.set(0,-10,0);
       renderTargets[3].root.scene.add(root);
     });
   });
+
+  {
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
+      const root = gltf.scene;
+      //renderTargets[3].root.scene.add(root);
+      //console.log(dumpObject(root).join('\n'));
+
+      // compute the box that contains all the stuff
+      // from root and below
+      const box = new THREE.Box3().setFromObject(root);
+
+      const boxSize = box.getSize(new THREE.Vector3()).length();
+      const boxCenter = box.getCenter(new THREE.Vector3());
+
+      // set the camera to frame the box
+      // update the Trackball controls to handle the new size
+      controls.maxDistance = boxSize * 10;
+      //controls.target.copy(boxCenter);
+      controls.update();
+    });
+  }
 
 }
 
@@ -382,11 +446,13 @@ function animate() {
 
 
     //renderTargets[4].root.scene.children[1].rotation.x += 0.001;
-    renderTargets[4].root.scene.children[1].rotation.y += 0.001;
+    renderTargets[4].root.scene.children[2].rotation.y += 0.001;
     //renderTargets[4].root.scene.children[1].rotation.z += 0.001;
     //renderTargets[4].root.scene.add(ball)
     //renderTargets[4].root.scene.children[2].rotation.y += 0.02;
     //renderTargets[4].root.scene.children[2].rotation.z += 0.001;
+
+    
     
 }
 
@@ -421,6 +487,11 @@ addEventListener('click', () => {
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.grayscale, 'value').name("grayscale")
     console.log(renderTargets[currentArtworkIndex].root.scene);
     
+    folder2.add(spotlightBool, 'helperEnabled').onChange(function (val ) {
+      //const spotLightHelper = new THREE.SpotLightHelper(renderTargets[currentArtworkIndex].root.scene.children[0]);
+      //renderTargets[currentArtworkIndex].root.scene.add(spotLightHelper);
+
+    })
     let spotLight = renderTargets[currentArtworkIndex].root.scene.children[0];
     const params = {
       'light color': spotLight.color.getHex(),
@@ -431,13 +502,41 @@ addEventListener('click', () => {
       decay: spotLight.decay,
       focus: spotLight.shadow.focus
     };
-
     folder2.addColor(params, 'light color').onChange( function ( val ) {
 
       spotLight.color.setHex( val );
-      animate();;
 
     });
+    folder2.add( params, 'intensity', 0, 2 ).onChange( function ( val ) {
+
+      spotLight.intensity = val;
+
+    } );
+    folder2.add( params, 'distance', 50, 200 ).onChange( function ( val ) {
+
+      spotLight.distance = val;
+
+    } );
+    folder2.add( params, 'angle', 0, Math.PI / 3 ).onChange( function ( val ) {
+
+      spotLight.angle = val;
+
+    } );
+    folder2.add( params, 'penumbra', 0, 1 ).onChange( function ( val ) {
+
+      spotLight.penumbra = val;
+
+    } );
+    folder2.add( params, 'decay', 1, 2 ).onChange( function ( val ) {
+
+      spotLight.decay = val;
+
+    } );
+    folder2.add( params, 'focus', 0, 1 ).onChange( function ( val ) {
+
+      spotLight.shadow.focus = val;
+
+    } );
 
     //folder2.addColor(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'g').min(0).max(1);
     //folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'b').min(0).max(1);
@@ -463,9 +562,9 @@ addEventListener('keydown', (e) => {
         //console.log(renderTargets[currentArtworkIndex].root.scene.children[1].geometry.parameters.width);
         //controls.object.fov = renderTargets[currentArtworkIndex].root.scene.children[1].geometry.parameters.width;
         //controls.object.updateProjectionMatrix();
-        controls.object.position.set(0,0,14)
+        controls.object.position.set(0,-2,20)
       }
-      controls.update();
+      //controls.update();
       break;
     case 83: //'S' foir screenshot
       canvas.toBlob((blob) => {
@@ -497,7 +596,7 @@ function makeArtScene(texture) {
   //add spotlights source to scene
   {
     const spotLight = new THREE.SpotLight( 0xffffff );
-    spotLight.position.set( 0, 2, 0 );
+    spotLight.position.set( 0, 14, 10 );
 
     spotLight.castShadow = true;
 
@@ -512,14 +611,14 @@ function makeArtScene(texture) {
   }
 
   
-  //const ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
+  //const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 ); // soft white light
   
 
 
 
   //add floor plane
   {
-    const floorSize = 40;
+    const floorSize = 100;
   
     const loader = new THREE.TextureLoader();
     const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
@@ -535,7 +634,7 @@ function makeArtScene(texture) {
       side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(floorGeo, floorMat);
-    mesh.position.set(0,-3,0);
+    mesh.position.set(0,-10.5,0);
     mesh.rotation.x = Math.PI * -.5;
     rtScene.add(mesh);
   }
