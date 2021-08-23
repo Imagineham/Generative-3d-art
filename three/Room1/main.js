@@ -312,29 +312,6 @@ function init() {
 
 
   ///////OBJ LOADER////////////////////////////////
-  {
-  const planeSize = 40;
-
-  const loader = new THREE.TextureLoader();
-  const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.magFilter = THREE.NearestFilter;
-  const repeats = planeSize / 2;
-  texture.repeat.set(repeats, repeats);
-
-  const planeGeo = new THREE.PlaneGeometry(planeSize, planeSize);
-  const planeMat = new THREE.MeshPhongMaterial({
-    map: texture,
-    side: THREE.DoubleSide,
-  });
-  const mesh = new THREE.Mesh(planeGeo, planeMat);
-  mesh.position.set(0,-3,0);
-  mesh.rotation.x = Math.PI * -.5;
-  renderTargets[3].root.scene.add(mesh);
-  }
-
-
   console.log(renderTargets[3].root.scene.remove(renderTargets[3].root.scene.children[1]));
   mtlLoader = new MTLLoader();
   mtlLoader.load('models/windmill_001.mtl', (mtl) => {
@@ -443,10 +420,28 @@ addEventListener('click', () => {
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.sCount, 'value').min(0).max(4096).name("scanline count")
     folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.grayscale, 'value').name("grayscale")
     console.log(renderTargets[currentArtworkIndex].root.scene);
-    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'r').min(0).max(1);
-    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'g').min(0).max(1);
-    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'b').min(0).max(1);
-    folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0], 'intensity').min(0).max(1);
+    
+    let spotLight = renderTargets[currentArtworkIndex].root.scene.children[0];
+    const params = {
+      'light color': spotLight.color.getHex(),
+      intensity: spotLight.intensity,
+      distance: spotLight.distance,
+      angle: spotLight.angle,
+      penumbra: spotLight.penumbra,
+      decay: spotLight.decay,
+      focus: spotLight.shadow.focus
+    };
+
+    folder2.addColor(params, 'light color').onChange( function ( val ) {
+
+      spotLight.color.setHex( val );
+      animate();;
+
+    });
+
+    //folder2.addColor(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'g').min(0).max(1);
+    //folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'b').min(0).max(1);
+    //folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0], 'intensity').min(0).max(1);
     CLICK = true;
   } else {
     //CLICK = false;
@@ -499,9 +494,53 @@ function makeArtScene(texture) {
   let rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
   rtCamera.position.z = 14;
   
-  //add light source to scene
-  const ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
+  //add spotlights source to scene
+  {
+    const spotLight = new THREE.SpotLight( 0xffffff );
+    spotLight.position.set( 0, 2, 0 );
+
+    spotLight.castShadow = true;
+
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+
+    spotLight.shadow.camera.near = 500;
+    spotLight.shadow.camera.far = 4000;
+    spotLight.shadow.camera.fov = 30;
+
+    rtScene.add( spotLight );
+  }
+
   
+  //const ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
+  
+
+
+
+  //add floor plane
+  {
+    const floorSize = 40;
+  
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.magFilter = THREE.NearestFilter;
+    const repeats = floorSize / 2;
+    texture.repeat.set(repeats, repeats);
+  
+    const floorGeo = new THREE.PlaneGeometry(floorSize, floorSize);
+    const floorMat = new THREE.MeshPhongMaterial({
+      map: texture,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(floorGeo, floorMat);
+    mesh.position.set(0,-3,0);
+    mesh.rotation.x = Math.PI * -.5;
+    rtScene.add(mesh);
+  }
+
+
   //add plane for texture 
   const geometry = new THREE.PlaneGeometry(20, 20);
   const material = new THREE.MeshPhongMaterial({
@@ -509,8 +548,9 @@ function makeArtScene(texture) {
     side: THREE.DoubleSide
   });
   const plane = new THREE.Mesh(geometry, material);
-  rtScene.add( ambientLight );
+  //rtScene.add( ambientLight );
   rtScene.add( plane );
+
 
   artScene.scene = rtScene;
   artScene.camera = rtCamera;
