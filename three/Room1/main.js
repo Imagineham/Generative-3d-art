@@ -105,7 +105,7 @@ function init() {
     });
 
   //Light
-  const light = new THREE.AmbientLight( 0xffffff, 0.1 ); // soft white light
+  const light = new THREE.AmbientLight( 0xffffff, 0.45 ); // soft white light
   mainScene.add( light );
 
   //Planes
@@ -163,6 +163,14 @@ function init() {
   right.rotation.y = -Math.PI/2;
   mainScene.add(right);
 
+  {
+    const spotLight = new THREE.SpotLight( 0xcfcfcf );
+    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,0);
+    mainScene.add( spotLight );
+    spotLight.target = right;
+    spotLight.angle = Math.PI/2;
+  }
+
   //Closest Plane
   const closeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
   const closeMaterial = new THREE.MeshPhongMaterial({
@@ -197,6 +205,7 @@ function init() {
     mainScene.add( spotLight );
     spotLight.target = gamerjibeMesh;
     spotLight.angle = Math.PI/5.5;
+    spotLight.penumbra = 1;
   }
 
 
@@ -218,6 +227,7 @@ function init() {
     mainScene.add( spotLight );
     spotLight.target = polkaMesh;
     spotLight.angle = Math.PI/5.5;
+    spotLight.penumbra = 1;
   }
 
   const hexaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
@@ -236,6 +246,7 @@ function init() {
     mainScene.add( spotLight );
     spotLight.target = hexaMesh;
     spotLight.angle = Math.PI/5.5;
+    spotLight.penumbra = 1;
   }
 
   const chevGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
@@ -254,6 +265,7 @@ function init() {
     mainScene.add( spotLight );
     spotLight.target = chevronMesh;
     spotLight.angle = Math.PI/5.5;
+    spotLight.penumbra = 1;
   }
 
   const checksGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
@@ -272,6 +284,7 @@ function init() {
     mainScene.add( spotLight );
     spotLight.target = checksMesh;
     spotLight.angle = Math.PI/5.5;
+    spotLight.penumbra = 1;
   }
 
 
