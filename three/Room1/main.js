@@ -8,7 +8,7 @@ import {FilmPass} from 'https://threejsfundamentals.org/threejs/resources/threej
 import {OBJLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/OBJLoader.js';
 import {MTLLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/MTLLoader.js';
 import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/GLTFLoader.js';
-
+import { TeapotGeometry } from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/geometries/TeapotGeometry.js';
 
 //Constants
 let mainScene, mainCamera, renderer, canvas;
@@ -93,7 +93,7 @@ class Art {
 
 }
 
-let kanagawa, gogh, monet;
+let kanagawa, gogh, monet, oct;
 
 
 
@@ -330,26 +330,25 @@ function init() {
     kanagawa.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     kanagawa.composer.renderTarget2.texture.matrixAutoUpdate = false;
     kanagawa.composer.renderTarget2.texture.wrapS = kanagawa.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
-    kanagawa.composer.renderTarget2.texture.matrix.scale(1, 1);
+    kanagawa.composer.renderTarget2.texture.matrix.scale(2, 2);
 
     const geometry = new THREE.PlaneGeometry(20, 20);
     const material = new THREE.MeshPhongMaterial({
-      //map: kanagawa.texture,
+      map: kanagawa.texture,
       side: THREE.DoubleSide
     });
     const plane = new THREE.Mesh(geometry, material);
 
-    //kanagawa.scene.background = new THREE.Color('purple');
-    //kanagawa.scene.add(ambientLight);
-    //kanagawa.scene.add(plane);
+    kanagawa.scene.add(ambientLight);
+    kanagawa.scene.add(plane);
 
 
-    const octGeo = new THREE.BoxGeometry(5, 5, 5);
+    const octGeo = new THREE.TorusGeometry(3, 1, 100, 12);
     const octMat = new THREE.MeshBasicMaterial({
       map: kanagawa.composer.renderTarget2.texture,
       //color: 'purple' 
     } );
-    const oct = new THREE.Mesh( octGeo, octMat );
+    oct = new THREE.Mesh( octGeo, octMat );
     oct.position.set(0, 5, 12.5);
     oct.rotation.y -= Math.PI/2;
     mainScene.add( oct );
@@ -539,7 +538,8 @@ function init() {
     const gltfLoader = new GLTFLoader();
     gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
       const root = gltf.scene;
-      //renderTargets[3].root.scene.add(root);
+      kanagawa.scene.add(root);
+      console.log(root);
       //console.log(dumpObject(root).join('\n'));
 
       // compute the box that contains all the stuff
@@ -621,6 +621,9 @@ function animate() {
 
   }
   
+  
+  oct.rotation.y += 0.01;
+  oct.rotation.x += 0.01;
   gogh.scene.children[1].rotation.y += 0.01;
 
   ball.rotation.y += 0.001;
@@ -643,6 +646,7 @@ function animate() {
     INTERSECTED = null;
   }
 
+  /*
   {
 
     if (points.length < 3) {
@@ -677,6 +681,7 @@ function animate() {
     newLine.rotation.x += 3;
 
   }
+  */
 
 
 
