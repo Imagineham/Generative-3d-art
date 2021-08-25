@@ -18,7 +18,7 @@ let mouse = {
   x: undefined,
   y: undefined
 }
-let gui, folder1, folder2;
+let gui;
 
 
 let spotlightBool = {
@@ -51,6 +51,56 @@ let ball, box;
 
 //drawing Canvas constants
 let ballMaterial, boxMaterial;
+
+let points = [], line, newGeo, newMat, newLine;
+
+
+
+
+
+
+class Art { 
+
+  constructor() {
+    this.scene = makeScene();
+    this.camera = makeCamera();
+    this.composer = makeComposer(this.scene, this.camera);
+    //this.frame = makeFrame(this.composer);
+  }
+
+
+  makeFrame(width, height) {
+
+    const geometry = new THREE.PlaneGeometry(width, height);
+    
+    let material = new THREE.MeshPhongMaterial({
+      map: this.composer.renderTarget2.texture,
+      side: THREE.DoubleSide
+    });
+    
+    this.frame = new THREE.Mesh(geometry, material);
+
+  }
+
+  loadTexture(string) {
+    const loader = new THREE.TextureLoader();
+    this.texture = loader.load(string);
+  }
+
+  loadObject(mesh) {
+    this.mesh = mesh;
+  }
+
+}
+
+let kanagawa, gogh, monet;
+
+
+
+
+
+
+
 init();
 //setupCanvasDrawing();
 animate();
@@ -101,11 +151,10 @@ function init() {
     () => {
       const rt = new THREE.WebGLCubeRenderTarget(skyBoxtexture.image.height);
       rt.fromEquirectangularTexture(renderer, skyBoxtexture);
-      //scene.background = rt.texture;
     });
 
   //Light
-  const light = new THREE.AmbientLight( 0xffffff, 0.45 ); // soft white light
+  const light = new THREE.AmbientLight( 0xffffff, 0.45); // soft white light
   mainScene.add( light );
 
   //Planes
@@ -122,17 +171,6 @@ function init() {
   floor.position.set(0,-planeHeight/2,0);
   floor.rotation.x = Math.PI/2;
   mainScene.add(floor);
-
-  //Top plane
-  const topGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight * scale);
-  const topMaterial = new THREE.MeshPhongMaterial({
-    color: "blue",
-    side: THREE.DoubleSide
-  });
-  const top = new THREE.Mesh(topGeometry, topMaterial);
-  top.position.set(0,planeHeight/2,0);
-  top.rotation.x = Math.PI/2;
-  //scene.add(top);
 
   //Left Plane
   const leftGeometry = new THREE.PlaneGeometry(planeHeight * scale * 5, planeHeight * 5);
@@ -168,7 +206,7 @@ function init() {
     spotLight.position.set( -(planeWidth * scale)/2 + 15,10,0);
     mainScene.add( spotLight );
     spotLight.target = right;
-    spotLight.angle = Math.PI/2;
+    spotLight.angle = Math.PI/2.5;
   }
 
   //Closest Plane
@@ -199,28 +237,159 @@ function init() {
   const gamerjibeMesh = new THREE.Mesh(gamerJibeGeo, gamerjibeMat);
   gamerjibeMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,0);
   gamerjibeMesh.rotation.y = Math.PI/2;
+
+  /*
+  {
+    for(const art of artworks) {
+      //counter
+      let i;
+
+      //simple lighting
+      const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 );
+
+      const geometry = new THREE.PlaneGeometry(20, 20);
+      const material = new THREE.MeshPhongMaterial({
+        map: art.texture,
+        side: THREE.DoubleSide
+      });
+      const plane = new THREE.Mesh(geometry, material);
+
+      art.scene.add(ambientLight);
+      art.scene.add(plane);
+
+      art.makeFrame(planeWidth * scale / 4, planeHeight * scale / 4);
+      art.frame.position.set( -(planeWidth * scale)/2 + 0.05, 3, -50 + i * 25);
+      art.frame.rotation.y = Math.PI/2;
+
+      const spotLight = new THREE.SpotLight( 0xcfcfcf );
+      spotLight.position.set( -(planeWidth * scale)/2 + 15, 10, -50 + i * 25 );
+      spotLight.target = kanagawa.frame;
+      spotLight.penumbra = 1;
+
+      mainScene.add(art.frame);
+    }
+  }
+  */
+
+
+  {
+    gogh = new Art();
+
+
+    const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 );
+
+    gogh.loadTexture('./images/gogh.jpg');
+
+    gogh.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    gogh.texture.matrixAutoUpdate = false;
+    gogh.texture.wrapS = gogh.texture.wrapT = THREE.RepeatWrapping;
+    gogh.texture.matrix.scale(4, 4);
+
+    gogh.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    gogh.composer.renderTarget2.texture.matrixAutoUpdate = false;
+    gogh.composer.renderTarget2.texture.wrapS = gogh.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
+    gogh.composer.renderTarget2.texture.matrix.scale(4, 4);
+
+    const geometry = new THREE.BoxGeometry(10, 10, 10);
+    const material = new THREE.MeshPhongMaterial({
+      map: gogh.texture,
+      side: THREE.DoubleSide
+    });
+    const plane = new THREE.Mesh(geometry, material);
+
+    gogh.scene.add(ambientLight);
+    gogh.scene.add(plane);
+
+    const boxGeometry = new THREE.BoxGeometry(5, 5, 5);
+    const boxMaterial = new THREE.MeshPhongMaterial({
+      //color: "white",
+      map: gogh.composer.renderTarget2.texture,
+      side: THREE.DoubleSide,
+    })
+    const box = new THREE.Mesh(boxGeometry, boxMaterial);
+    box.position.set(0, 5, -12.5);
+    console.log(box);
+
+    mainScene.add(box);
+  }
+
+  {
+
+    kanagawa = new Art();
+    //kanagawa.composer.renderer.autoClearColor = false;
+    console.log(kanagawa);
+
+    const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 );
+
+    kanagawa.loadTexture('./images/kanagawa.jpg');
+
+    kanagawa.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    kanagawa.texture.matrixAutoUpdate = false;
+    kanagawa.texture.wrapS = kanagawa.texture.wrapT = THREE.RepeatWrapping;
+
+    kanagawa.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    kanagawa.composer.renderTarget2.texture.matrixAutoUpdate = false;
+    kanagawa.composer.renderTarget2.texture.wrapS = kanagawa.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
+    kanagawa.composer.renderTarget2.texture.matrix.scale(1, 1);
+
+    const geometry = new THREE.PlaneGeometry(20, 20);
+    const material = new THREE.MeshPhongMaterial({
+      //map: kanagawa.texture,
+      side: THREE.DoubleSide
+    });
+    const plane = new THREE.Mesh(geometry, material);
+
+    //kanagawa.scene.background = new THREE.Color('purple');
+    //kanagawa.scene.add(ambientLight);
+    //kanagawa.scene.add(plane);
+
+
+    const octGeo = new THREE.BoxGeometry(5, 5, 5);
+    const octMat = new THREE.MeshBasicMaterial({
+      map: kanagawa.composer.renderTarget2.texture,
+      //color: 'purple' 
+    } );
+    const oct = new THREE.Mesh( octGeo, octMat );
+    oct.position.set(0, 5, 12.5);
+    oct.rotation.y -= Math.PI/2;
+    mainScene.add( oct );
+  }
+
+
+
   {
     const spotLight = new THREE.SpotLight( 0xcfcfcf );
     spotLight.position.set( -(planeWidth * scale)/2 + 15,10,0);
     mainScene.add( spotLight );
     spotLight.target = gamerjibeMesh;
-    spotLight.angle = Math.PI/5.5;
     spotLight.penumbra = 1;
   }
-
-
 
   ///other images////
   const polkaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
   const polkaMaterial = new THREE.MeshPhongMaterial({
-    //color: "purple",
     side: THREE.DoubleSide,
   });
 
   const polkaMesh = new THREE.Mesh(polkaGeometry, polkaMaterial);
-  polkaMesh.position.set(-(planeWidth * scale)/2 + 1,3,25);
+  polkaMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,25);
   polkaMesh.rotation.y = Math.PI/2;
   polkaMesh.material.map = polkaDots;
+
+  {
+    const monet = new Art();
+
+    monet.loadTexture('./images/monet.jpg');
+
+    monet.makeFrame(planeWidth * scale / 4, planeHeight * scale / 4);
+    monet.frame.position.set(-(planeWidth * scale)/2 + 1,3,25);
+    monet.frame.rotation.y = Math.PI/2;
+
+    //artworks.push(monet);
+
+    //mainScene.add(monet.frame);
+  }
+
   {
     const spotLight = new THREE.SpotLight( 0xcfcfcf );
     spotLight.position.set( -(planeWidth * scale)/2 + 15,10,25);
@@ -232,7 +401,6 @@ function init() {
 
   const hexaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
   const hexaMaterial = new THREE.MeshPhongMaterial({
-    //color: "purple",
     side: THREE.DoubleSide,
   });
 
@@ -251,7 +419,6 @@ function init() {
 
   const chevGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
   const chevMaterial = new THREE.MeshPhongMaterial({
-    //color: "purple",
     side: THREE.DoubleSide,
   });
 
@@ -316,17 +483,6 @@ function init() {
   }
 
 
-  //gamerjibeMesh.material.map = renderTargets[0].composer.renderTarget2.texture;
-
-
-  //gamerjibeScene = makeArtScene(gamerJibe);
-  //gamerjibeComposer = makeFilmComposer(gamerjibeScene, filmRenderTarget);
-  //let polkaScene = makeArtScene(polkaDots);
-  //let hexaScene = makeArtScene(hexagons);
-  //let chevronScene = makeArtScene(chevron);
-  //let checksScene = makeArtScene(checks);
-
-
   const borderGeometry = new THREE.PlaneGeometry((planeWidth * scale / 4) + 0.2, (planeHeight * scale / 4) + 0.2);
   const borderMaterial = new THREE.MeshPhongMaterial({
     color: "black"
@@ -362,8 +518,7 @@ function init() {
   mainComposer = new EffectComposer(renderer, mainRenderTarget);
   mainComposer.addPass(new RenderPass(mainScene, mainCamera));
   mainComposer.setSize(canvas.width, canvas.height);
-  console.log("controls" + controls.object)
-
+  
 
 
   ///////OBJ LOADER////////////////////////////////
@@ -402,20 +557,51 @@ function init() {
     });
   }
 
+
+  points.push(new THREE.Vector3(
+    getRandomIntInclusive(-4, 4),
+    getRandomIntInclusive(-4, 4),
+    getRandomIntInclusive(-4, 4)
+  ));
+  points.push(new THREE.Vector3(
+    getRandomIntInclusive(-4, 4),
+    getRandomIntInclusive(-4, 4),
+    getRandomIntInclusive(-4, 4)
+  ));
+
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({
+    color: new THREE.Color('white')
+  });
+  line = new THREE.Line(geometry, material);
+  line.geometry.verticesNeedUpdate = true;
+
+
 }
 
 function render() {
-  //renderer.render(mainScene, mainCamera);
+
   controls.object = mainCamera;
   for(let i = 0; i < renderTargets.length; i++) {
-    renderTargets[i].composer.passes[1].enabled = true;
+    //renderTargets[i].composer.passes[0].renderToScreen = true
+    //renderTargets[i].composer.passes[1].enabled = true;
     renderTargets[i].composer.render();
   }
 
-  //renderTargets[currentArtworkIndex].composer.passes[1].enabled = true;
-  //renderTargets[currentArtworkIndex].composer.render();
-  //gamerjibeComposer.passes[1].enabled = true;
-  //gamerjibeComposer.render();
+  /*
+  for(let i = 0; i < artworks.length; i++) {
+    artworks[i].composer.passes[1].enabled = true;
+    artworks[i].composer.render();
+  }
+  */
+
+  kanagawa.composer.passes[1].enabled = true;
+  kanagawa.composer.render();
+
+  gogh.composer.passes[1].enabled = true;
+  gogh.composer.render();
+
+
   mainComposer.render();
   CLICK = false;
 }
@@ -426,16 +612,16 @@ function animate() {
 
   
   if(!CLICK) {
-      renderTargets[0].composer.passes[1].enabled = true;
+      //renderTargets[0].composer.passes[1].enabled = true;
       renderTargets[0].composer.render();
     render();
   } else {
     controls.object = renderTargets[currentArtworkIndex].root.camera;  
-    //gamerjibeScene.camera;
     renderTargets[currentArtworkIndex].composer.render();
-    //amerjibeComposer.render();
+
   }
   
+  gogh.scene.children[1].rotation.y += 0.01;
 
   ball.rotation.y += 0.001;
   ball.rotation.x += 0.001;
@@ -456,6 +642,42 @@ function animate() {
     if (INTERSECTED) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
     INTERSECTED = null;
   }
+
+  {
+
+    if (points.length < 3) {
+      points.push(new THREE.Vector3(
+        getRandomIntInclusive(-3, 3),
+        getRandomIntInclusive(-2, 2),
+        getRandomIntInclusive(-10, 20)
+      ));
+      
+  
+      //console.log(points);
+      let newGeo = new THREE.BufferGeometry().setFromPoints([
+        points[points.length - 2],
+        points[points.length - 1]
+      ]);
+  
+  
+      let r = Math.random();
+      let g = Math.random();
+      let b = Math.random();
+  
+      let newMat = new THREE.LineBasicMaterial();
+  
+      newLine = new THREE.Line(newGeo, newMat);
+      newLine.lookAt(new THREE.Vector3(0,0,0));
+      //newLine.rotation.x += 0.5;
+      kanagawa.scene.add(newLine);
+    }
+  
+    newLine.rotation.z += 2;
+    newLine.rotation.y += 3;
+    newLine.rotation.x += 3;
+
+  }
+
 
 
     //renderTargets[4].root.scene.children[1].rotation.x += 0.001;
@@ -487,69 +709,9 @@ addEventListener('click', () => {
   if(INTERSECTED && !CLICK) {
 
     currentArtworkIndex = (artworks.indexOf(INTERSECTED))
+    console.log(renderTargets[currentArtworkIndex])
 
-    gui = new dat.GUI();
-    folder1 = gui.addFolder('FilmPass');
-    folder2 = gui.addFolder('Lighting');       
-    //the first pass is the renderpass! 
-    console.log(currentArtworkIndex);
-    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1], 'enabled');
-    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.nIntensity, 'value').min(0).max(1).name("noise intensity");
-    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.sIntensity, 'value').min(0).max(1).name("scanline intensity")
-    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.sCount, 'value').min(0).max(4096).name("scanline count")
-    folder1.add(renderTargets[currentArtworkIndex].composer.passes[1].uniforms.grayscale, 'value').name("grayscale")
-    console.log(renderTargets[currentArtworkIndex].root.scene);
-    
-    folder2.add(spotlightBool, 'helperEnabled').onChange(function (val ) {
-      //const spotLightHelper = new THREE.SpotLightHelper(renderTargets[currentArtworkIndex].root.scene.children[0]);
-      //renderTargets[currentArtworkIndex].root.scene.add(spotLightHelper);
-
-    })
-    let spotLight = renderTargets[currentArtworkIndex].root.scene.children[0];
-    const params = {
-      'light color': spotLight.color.getHex(),
-      intensity: spotLight.intensity,
-      distance: spotLight.distance,
-      angle: spotLight.angle,
-      penumbra: spotLight.penumbra,
-      decay: spotLight.decay,
-      focus: spotLight.shadow.focus
-    };
-    folder2.addColor(params, 'light color').onChange( function ( val ) {
-
-      spotLight.color.setHex( val );
-
-    });
-    folder2.add( params, 'intensity', 0, 2 ).onChange( function ( val ) {
-
-      spotLight.intensity = val;
-
-    } );
-    folder2.add( params, 'distance', 50, 200 ).onChange( function ( val ) {
-
-      spotLight.distance = val;
-
-    } );
-    folder2.add( params, 'angle', 0, Math.PI / 3 ).onChange( function ( val ) {
-
-      spotLight.angle = val;
-
-    } );
-    folder2.add( params, 'penumbra', 0, 1 ).onChange( function ( val ) {
-
-      spotLight.penumbra = val;
-
-    } );
-    folder2.add( params, 'decay', 1, 2 ).onChange( function ( val ) {
-
-      spotLight.decay = val;
-
-    } );
-    folder2.add( params, 'focus', 0, 1 ).onChange( function ( val ) {
-
-      spotLight.shadow.focus = val;
-
-    } );
+    makeGui();
 
     //folder2.addColor(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'g').min(0).max(1);
     //folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'b').min(0).max(1);
@@ -565,16 +727,13 @@ addEventListener('keydown', (e) => {
 
   switch(e.keyCode) {
     case 27: // 'ESC'
-      if(gui) {
-        gui.destroy();
+      if(gui != undefined) {
+        destroyGUI();
       }
       render();
       break;
     case 67:
       if (renderTargets[currentArtworkIndex]) {
-        //console.log(renderTargets[currentArtworkIndex].root.scene.children[1].geometry.parameters.width);
-        //controls.object.fov = renderTargets[currentArtworkIndex].root.scene.children[1].geometry.parameters.width;
-        //controls.object.updateProjectionMatrix();
         controls.object.position.set(0,-2,20)
       }
       //controls.update();
@@ -626,8 +785,6 @@ function makeArtScene(texture) {
   
   //const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 ); // soft white light
   
-
-
 
   //add floor plane
   {
@@ -682,16 +839,66 @@ function makeFilmComposer(artScene, renderTarget) {
 		648,    // scanline count
 		true,  // grayscale
 	);
-  
+
   filmComposer.addPass(filmPass);
   filmComposer.setSize(innerWidth, innerHeight);
-
   return filmComposer;
 }
 
+function makeGui() {
+
+  const currentScene = renderTargets[currentArtworkIndex];
+  gui = new dat.GUI();
+  
+  //FilmPass
+  {
+    let folder1 = gui.addFolder('FilmPass');
+    let myFilmPass = currentScene.composer.passes[1];
+
+    const params = {
+      'Noise Intensity': myFilmPass.uniforms.nIntensity,
+      'Scanline Intensity': myFilmPass.uniforms.sIntensity,
+      'Scanline Count': myFilmPass.uniforms.sCount,
+      'Grayscale': myFilmPass.uniforms.grayscale
+    }
 
 
+    folder1.add(myFilmPass, 'enabled');
+    folder1.add(params['Noise Intensity'], 'value', 0, 1).name('Noise Intensity');
+    folder1.add(params['Scanline Intensity'], 'value', 0, 1).name('Scanline Intensity');
+    folder1.add(params['Scanline Count'], 'value', 0, 4096).name('Scanline Count');
+    folder1.add(params['Grayscale'], 'value').name('Grayscale');
+  }
 
+  //spotLight example code from https://github.com/mrdoob/three.js/blob/master/examples/webgl_lights_spotlight.html
+  {
+    let folder2 = gui.addFolder('SpotLight');       
+    let spotLight = currentScene.root.scene.children[0];
+    const params = {
+      'light color': spotLight.color.getHex(),
+    };
+    console.log(spotLight);
+    folder2.addColor(params, 'light color').onChange( function ( val ) {
+    
+      spotLight.color.setHex( val );
+
+    });
+    folder2.add( spotLight, 'intensity', 0, 2 )
+    folder2.add( spotLight, 'distance', 50, 200 );
+    folder2.add( spotLight, 'angle', 0, Math.PI / 3 );
+    folder2.add( spotLight, 'penumbra', 0, 1 );
+    //folder2.add( spotLight, 'decay', 1, 2 );
+    //folder2.add( spotLight.shadow, 'focus', 0, 1 );
+  }
+
+    //return gui;
+
+
+}
+
+function destroyGUI() {
+  gui.destroy();
+}
 
 const saveBlob = (function() {
   const a = document.createElement('a');
@@ -799,5 +1006,112 @@ function draw( drawContext, x, y ) {
 
 */
 
+
+/*
+class Art { 
+
+  constructor() {
+    this.scene = makeScene();
+    this.camera = makeCamera();
+    this.composer = makeComposer(this.scene, this.camera);
+    this.frame = makeFrame(this.composer);
+  }
+
+  makeFrame(width, height) {
+
+    const width = 2;
+    const height = 2;
+
+
+    const geometry = new THREE.PlaneGeometry(width, height);
+    let material = new THREE.MeshPhongMaterial({
+      map: this.composer.renderTarget2.texture,
+      side: THREE.DoubleSide
+    });
+    
+    this.frame = new THREE.Mesh(geometry, material);
+
+  }
+
+  loadTexture(string) {
+    const loader = new THREE.TextureLoader();
+    this.texture = loader.load(string);
+  }
+
+  loadObject(mesh) {
+    this.mesh = mesh;
+  }
+
+}
+*/
+
+
+function makeScene() {
+
+  return new THREE.Scene();
+}
+
+function makeCamera() {
+  const fov = 75; 
+  const aspect = innerWidth / innerHeight;
+  const near = 0.1;
+  const far = 500;
+
+  let camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera.position.set(0,0,14);
+
+  return camera;
+
+}
+
+function makeComposer(scene, camera) {
+
+  const rtWidth = 512;
+  const rtHeight = 512;
+  let rtParameters = { 
+    minFilter: THREE.LinearFilter, 
+    magFilter: THREE.LinearFilter, 
+    format: THREE.RGBAFormat, 
+    stencilBuffer: false 
+  };
+
+  const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
+
+  let composer = new EffectComposer(renderer, renderTarget);
+  composer.addPass(new RenderPass(scene, camera));
+
+  let filmPass = new FilmPass(
+      1, //noise intensity
+      0.025, //scanline intensity
+      648, //scanline count
+      true, //grayscale
+  );
+
+  filmPass.enabled = true;
+
+  composer.addPass(filmPass);
+
+  return composer;
+
+}
+
+
+function makeFrame(composer) {
+
+  const width = 2;
+  const height = 2;
+
+
+  const geometry = new THREE.PlaneGeometry(width, height);
+  let material = new THREE.MeshPhongMaterial({
+    map: composer.renderTarget2.texture,
+    side: THREE.DoubleSide
+  });
+
+  const frame = new THREE.Mesh(geometry, material);
+  
+  return frame;
+
+}
 
 
