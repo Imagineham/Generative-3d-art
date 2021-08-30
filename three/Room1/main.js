@@ -40,6 +40,7 @@ const rtWidth = 512;
  * just artworks
  */
 let artworks = [], renderTargets = [], frames = [], currentArtworkIndex;
+let goghBox, kanagawaTorus;
 
 //main camera parameters
 let fov, aspectRatio, near, far, controls; 
@@ -151,7 +152,7 @@ function init() {
     });
 
   //Light
-  const light = new THREE.AmbientLight( 0xffffff, 0.35); // soft white light
+  const light = new THREE.AmbientLight( 0xffffff, 0.7); // soft white light
   mainScene.add( light );
 
   //Planes
@@ -160,13 +161,13 @@ function init() {
   const scale = 15;
 
   //floor
-  const floorGeo = new THREE.PlaneGeometry(planeWidth * scale, planeHeight * scale * 5);
+  const floorGeo = new THREE.PlaneGeometry(planeWidth * scale * 2, planeHeight * scale * 5);
   const floorMat = new THREE.MeshBasicMaterial({
     color: 0xcfcfcfcf,
     side: THREE.DoubleSide,
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
-  floor.position.set(0,-planeHeight/2,0);
+  floor.position.set(0, -planeHeight/2, 0);
   floor.rotation.x = Math.PI/2;
   mainScene.add(floor);
 
@@ -177,7 +178,7 @@ function init() {
     side: THREE.DoubleSide
   });
   const left = new THREE.Mesh(leftGeometry, leftMaterial);
-  left.position.set(-(planeWidth * scale)/2,4,0);
+  left.position.set( -(planeWidth * scale), 4, 0);
   left.rotation.y = Math.PI/2;
   mainScene.add(left);
 
@@ -195,18 +196,14 @@ function init() {
     side: THREE.DoubleSide
   });
   const right = new THREE.Mesh(rightGeometry, rightMaterial);
-  right.position.set((planeWidth * scale)/2,4,0);
+  right.position.set( planeWidth * scale, 4, 0 );
   right.rotation.y = -Math.PI/2;
   mainScene.add(right);
 
-  {
-    const spotLight = new THREE.SpotLight( 0xcfcfcf );
-    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,0);
-    mainScene.add( spotLight );
-    spotLight.target = right;
-    spotLight.angle = Math.PI/2.5;
-  }
 
+
+
+  //2d art
   {
     const gogh = new Art();
     const kanagawa = new Art();
@@ -254,12 +251,12 @@ function init() {
       art.scene.add(plane);
 
       art.makeFrame(8, 8);
-      art.frame.position.set( -(planeWidth * scale)/2 + 0.05, 3.5, 50 - (i * 25));
+      art.frame.position.set( -(planeWidth * scale) + 0.05, 3.5, 50 - (i * 25));
       art.frame.rotation.y = Math.PI/2;
 
 
       const spotLight = new THREE.SpotLight( 0xcfcfcf );
-      spotLight.position.set( -(planeWidth * scale)/2 + 15, 10, 50 - (i * 25));
+      spotLight.position.set( -(planeWidth * scale) + 15, 10, 50 - (i * 25));
       mainScene.add( spotLight );
       spotLight.target = art.frame;
       spotLight.angle = Math.PI/5.5;
@@ -270,92 +267,136 @@ function init() {
     }
   }
 
+  //3d art
+  {
+
+  }
+
+
+
+
+  //Gen art
+  {
+    const linesGen = new Art();
+    const circleGen = new Art();
+    const triangleGen = new Art();
+    const threeDGen = new Art();
+    const randomGen = new Art();
+
+
+
+    artworks.push(linesGen, circleGen, triangleGen, threeDGen, randomGen);
+
+    for(let i = 5; i < artworks.length; i++) {
+      const art = artworks[i];
+
+      //simple lighting
+      //add spotlights source to scene
+      {
+        const spotLight = new THREE.SpotLight( 0xffffff );
+        spotLight.position.set( 0, 14, 10 );
+
+        spotLight.castShadow = true;
+
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+
+        spotLight.shadow.camera.near = 500;
+        spotLight.shadow.camera.far = 4000;
+        spotLight.shadow.camera.fov = 30;
+
+        art.scene.add( spotLight );
+      }
+
+
+      //art.scene.add(ambientLight);
+
+      art.makeFrame(8, 8);
+      art.frame.position.set( (planeWidth * scale) - 0.05, 3.5, 50 - ((i - 5) * 25));
+      art.frame.rotation.y = Math.PI/2;
+
+
+      const spotLight = new THREE.SpotLight( 0xcfcfcf );
+      spotLight.position.set( (planeWidth * scale) - 15, 10, 50 - ((i - 5) * 25));
+      mainScene.add( spotLight );
+      spotLight.target = art.frame;
+      spotLight.angle = Math.PI/5.5;
+      spotLight.penumbra = 1;
+
+      mainScene.add(art.frame);
+      console.log(i);
+
+    }
+
+  }
 
   {
-    /*
-    const gogh = new Art();
+    goghBox = new Art();
 
 
-    const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 );
+    const ambientLight = new THREE.AmbientLight( 0xffffff, 1 );
 
-    gogh.loadTexture('./images/gogh.jpg');
+    goghBox.loadTexture('./images/gogh.jpg');
 
     
-    gogh.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    gogh.texture.matrixAutoUpdate = false;
-    gogh.texture.wrapS = gogh.texture.wrapT = THREE.RepeatWrapping;
-    gogh.texture.matrix.scale(4, 4);
+    goghBox.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    goghBox.texture.matrixAutoUpdate = false;
+    goghBox.texture.wrapS = goghBox.texture.wrapT = THREE.RepeatWrapping;
+    goghBox.texture.matrix.scale(4, 4);
 
-    gogh.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    gogh.composer.renderTarget2.texture.matrixAutoUpdate = false;
-    gogh.composer.renderTarget2.texture.wrapS = gogh.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
-    gogh.composer.renderTarget2.texture.matrix.scale(4, 4);
+    goghBox.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    goghBox.composer.renderTarget2.texture.matrixAutoUpdate = false;
+    goghBox.composer.renderTarget2.texture.wrapS = goghBox.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
+    goghBox.composer.renderTarget2.texture.matrix.scale(4, 4);
     
     const geometry = new THREE.BoxGeometry(10, 10, 10);
     const material = new THREE.MeshPhongMaterial({
-      map: gogh.texture,
+      map: goghBox.texture,
       side: THREE.DoubleSide
     });
     const plane = new THREE.Mesh(geometry, material);
 
-    gogh.scene.add(ambientLight);
-    gogh.scene.add(plane);
+    goghBox.scene.add(ambientLight);
+    goghBox.scene.add(plane);
 
     const boxGeometry = new THREE.BoxGeometry(5, 5, 5);
     const boxMaterial = new THREE.MeshPhongMaterial({
-      //color: "white",
-      map: gogh.composer.renderTarget2.texture,
+      map: goghBox.composer.renderTarget2.texture,
       side: THREE.DoubleSide,
     })
     const box = new THREE.Mesh(boxGeometry, boxMaterial);
-    box.position.set(0, 5, -12.5);
+    box.position.set(0, 5, 15);
     console.log(box);
 
     mainScene.add(box);
-    */
     
   }
 
   {
-    /*
-    kanagawa = new Art();
-    //kanagawa.composer.renderer.autoClearColor = false;
-    console.log(kanagawa);
+
+    kanagawaTorus = new Art();
 
     const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 );
 
-    kanagawa.loadTexture('./images/kanagawa.jpg');
-
-    kanagawa.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    kanagawa.texture.matrixAutoUpdate = false;
-    kanagawa.texture.wrapS = kanagawa.texture.wrapT = THREE.RepeatWrapping;
-
-    kanagawa.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    kanagawa.composer.renderTarget2.texture.matrixAutoUpdate = false;
-    kanagawa.composer.renderTarget2.texture.wrapS = kanagawa.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
-    kanagawa.composer.renderTarget2.texture.matrix.scale(2, 2);
-
-    const geometry = new THREE.PlaneGeometry(20, 20);
-    const material = new THREE.MeshPhongMaterial({
-      map: kanagawa.texture,
-      side: THREE.DoubleSide
-    });
-    const plane = new THREE.Mesh(geometry, material);
-
-    kanagawa.scene.add(ambientLight);
-    kanagawa.scene.add(plane);
+    kanagawaTorus.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    kanagawaTorus.composer.renderTarget2.texture.matrixAutoUpdate = false;
+    kanagawaTorus.composer.renderTarget2.texture.wrapS = kanagawaTorus.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
+    kanagawaTorus.composer.renderTarget2.texture.matrix.scale(2, 2);
 
 
-    const octGeo = new THREE.TorusGeometry(3, 1, 100, 12);
-    const octMat = new THREE.MeshBasicMaterial({
-      map: kanagawa.composer.renderTarget2.texture,
-      //color: 'purple' 
+    kanagawaTorus.scene.add(ambientLight);
+
+
+    const torusKnotGeo = new THREE.TorusKnotGeometry(3, 1, 100, 12);
+    const torusKnotMat = new THREE.MeshBasicMaterial({
+      map: kanagawaTorus.composer.renderTarget2.texture,
     } );
-    oct = new THREE.Mesh( octGeo, octMat );
-    oct.position.set(0, 5, 12.5);
-    oct.rotation.y -= Math.PI/2;
-    mainScene.add( oct );
-    */
+    const torusKnot = new THREE.Mesh( torusKnotGeo, torusKnotMat );
+    torusKnot.position.set(0, 5, 37.5);
+    torusKnot.rotation.y -= Math.PI/2;
+    mainScene.add( torusKnot);
+
+
   }
 
   {
@@ -379,25 +420,35 @@ function init() {
 
 
   ///////OBJ LOADER////////////////////////////////
-  //renderTargets[3].root.scene.remove(renderTargets[3].root.scene.children[2]);
-  mtlLoader = new MTLLoader();
-  mtlLoader.load('models/windmill_001.mtl', (mtl) => {
-    mtl.preload();
-    mtl.materials.Material.side = THREE.DoubleSide;
-    objLoader = new OBJLoader();
-    objLoader.setMaterials(mtl);
-    objLoader.load('models/windmill_001.obj', (root) => {
-      root.position.set(0,-10,0);
-      //renderTargets[3].root.scene.add(root);
+  {
+    let windmill;
+
+    mtlLoader = new MTLLoader();
+    mtlLoader.load('models/windmill_001.mtl', (mtl) => {
+      mtl.preload();
+      mtl.materials.Material.side = THREE.DoubleSide;
+      objLoader = new OBJLoader();
+      objLoader.setMaterials(mtl);
+      objLoader.load('models/windmill_001.obj', (root) => {
+        windmill = root;
+        root.position.set( 0, 0, -37.5 );
+        mainScene.add(root);
+      });
     });
-  });
+
+    
+
+
+  }
 
   {
     const gltfLoader = new GLTFLoader();
     gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
       const root = gltf.scene;
-      //kanagawa.scene.add(root);
-      //console.log(root);
+      mainScene.add(root);
+      console.log(root);
+      root.position.set(6, 2, -12.5);
+      root.scale.set(0.01, 0.01, 0.01);
       //console.log(dumpObject(root).join('\n'));
 
       // compute the box that contains all the stuff
@@ -441,8 +492,7 @@ function render() {
 
   controls.object = mainCamera;
   controls.enableRotate = true;
-  controls.minDistance = Math.PI;
-  controls.maxDistance = 35;
+  controls.maxDistance = Infinity;
   controls.update();
 
   
@@ -450,6 +500,9 @@ function render() {
     art.composer.passes[1].enabled = true;
     art.composer.render();
   }
+
+  goghBox.composer.render();
+  kanagawaTorus.composer.render();
 
 
   mainComposer.render();
@@ -475,7 +528,27 @@ function animate() {
 
   }
 
-  
+  goghBox.scene.children[1].rotation.y += 0.03;
+
+  {
+    if(kanagawaTorus.scene.children.length < 2) {
+      for(let i = 0; i < 2; i++) {
+        const geometry = new THREE.CircleGeometry( 5, 32 );
+        const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+        const circle = new THREE.Mesh( geometry, material );
+        circle.position.set(
+          getRandomIntInclusive(-10, 10),
+          getRandomIntInclusive(-10, 10),
+          getRandomIntInclusive(-10, 10)
+        )
+
+        kanagawaTorus.scene.add( circle );
+      }
+    }
+  }
+
+
+
   //array of frames
   frames = artworks.map(artwork => artwork.frame);
 
