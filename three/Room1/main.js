@@ -39,7 +39,7 @@ const rtWidth = 512;
  * the raycaster does not need to check if everything is being selected
  * just artworks
  */
-let artworks = [], renderTargets = [], currentArtworkIndex;
+let artworks = [], renderTargets = [], frames = [], currentArtworkIndex;
 
 //main camera parameters
 let fov, aspectRatio, near, far, controls; 
@@ -65,7 +65,6 @@ class Art {
     this.scene = makeScene();
     this.camera = makeCamera();
     this.composer = makeComposer(this.scene, this.camera);
-    //this.frame = makeFrame(this.composer);
   }
 
 
@@ -93,7 +92,7 @@ class Art {
 
 }
 
-let kanagawa, gogh, monet, oct;
+//let kanagawa, gogh, monet, oct;
 
 
 
@@ -112,7 +111,7 @@ function init() {
 
   //Scene init
   mainScene = new THREE.Scene();
-
+  
   //Camera init
   fov = 75;
   aspectRatio = innerWidth/innerHeight;
@@ -139,22 +138,20 @@ function init() {
 
   //Loader init
   loader = new THREE.TextureLoader();
-  const gamerJibe = loader.load('./images/kanagawa.jpg');
-  const polkaDots = loader.load('./images/monet.jpg');
-  const hexagons = loader.load('./images/gogh.jpg');
+
   const argyle = loader.load('./images/argyle.png');
-  const checks = loader.load('./images/monetSnow.jpg');
-  const chevron = loader.load('./images/chevron.png');
+
 
   const skyBoxtexture = loader.load(
-    './images/blackAndWhiteRoom.jpg',
+    './images/space1.jpg',
     () => {
       const rt = new THREE.WebGLCubeRenderTarget(skyBoxtexture.image.height);
       rt.fromEquirectangularTexture(renderer, skyBoxtexture);
+      mainScene.background = rt.texture;
     });
 
   //Light
-  const light = new THREE.AmbientLight( 0xffffff, 0.45); // soft white light
+  const light = new THREE.AmbientLight( 0xffffff, 0.35); // soft white light
   mainScene.add( light );
 
   //Planes
@@ -162,9 +159,10 @@ function init() {
   const planeHeight = 2;
   const scale = 15;
 
-  //floor plane
+  //floor
   const floorGeo = new THREE.PlaneGeometry(planeWidth * scale, planeHeight * scale * 5);
-  const floorMat = new THREE.MeshNormalMaterial({
+  const floorMat = new THREE.MeshBasicMaterial({
+    color: 0xcfcfcfcf,
     side: THREE.DoubleSide,
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -172,10 +170,10 @@ function init() {
   floor.rotation.x = Math.PI/2;
   mainScene.add(floor);
 
-  //Left Plane
+  //Left Wall
   const leftGeometry = new THREE.PlaneGeometry(planeHeight * scale * 5, planeHeight * 5);
   const leftMaterial = new THREE.MeshPhongMaterial({
-    color: "yellow",
+    color: "white",
     side: THREE.DoubleSide
   });
   const left = new THREE.Mesh(leftGeometry, leftMaterial);
@@ -209,43 +207,41 @@ function init() {
     spotLight.angle = Math.PI/2.5;
   }
 
-  //Closest Plane
-  const closeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  const closeMaterial = new THREE.MeshPhongMaterial({
-    color: "orange",
-    side: THREE.DoubleSide
-  });
-  const closePlane = new THREE.Mesh(closeGeometry, closeMaterial);
-  closePlane.position.set(0,0,planeWidth/2);
-  //scene.add(closePlane);
-
-  //Furthest Plane
-  const farGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  const farMaterial = new THREE.MeshPhongMaterial({
-    color: "purple",
-    side: THREE.DoubleSide,
-  });
-  const farPlane = new THREE.Mesh(farGeometry, farMaterial);
-  farPlane.position.set(0,0,-planeWidth/2);
-  //scene.add(farPlane);
-
-  const gamerJibeGeo = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
-  const gamerjibeMat = new THREE.MeshPhongMaterial({
-    map: gamerJibe,
-    side: THREE.DoubleSide,
-  });
-  const gamerjibeMesh = new THREE.Mesh(gamerJibeGeo, gamerjibeMat);
-  gamerjibeMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,0);
-  gamerjibeMesh.rotation.y = Math.PI/2;
-
-  /*
   {
-    for(const art of artworks) {
-      //counter
-      let i;
+    const gogh = new Art();
+    const kanagawa = new Art();
+    const flowersMonet = new Art();
+    const snowMonet = new Art();
+    const footbridgeMonet = new Art();
+
+    gogh.loadTexture('./images/gogh.jpg');
+    kanagawa.loadTexture('./images/kanagawa.jpg');
+    flowersMonet.loadTexture('./images/flowers_monet.jpg');
+    snowMonet.loadTexture('./images/snow_monet.jpg');
+    footbridgeMonet.loadTexture('./images/footbridge_monet.jpg')
+
+    artworks.push(gogh, kanagawa, flowersMonet, snowMonet, footbridgeMonet);
+
+    for(let i = 0; i < artworks.length; i++) {
+      const art = artworks[i];
 
       //simple lighting
-      const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 );
+      //add spotlights source to scene
+      {
+        const spotLight = new THREE.SpotLight( 0xffffff );
+        spotLight.position.set( 0, 14, 10 );
+
+        spotLight.castShadow = true;
+
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+
+        spotLight.shadow.camera.near = 500;
+        spotLight.shadow.camera.far = 4000;
+        spotLight.shadow.camera.fov = 30;
+
+        art.scene.add( spotLight );
+      }
 
       const geometry = new THREE.PlaneGeometry(20, 20);
       const material = new THREE.MeshPhongMaterial({
@@ -254,32 +250,37 @@ function init() {
       });
       const plane = new THREE.Mesh(geometry, material);
 
-      art.scene.add(ambientLight);
+      //art.scene.add(ambientLight);
       art.scene.add(plane);
 
-      art.makeFrame(planeWidth * scale / 4, planeHeight * scale / 4);
-      art.frame.position.set( -(planeWidth * scale)/2 + 0.05, 3, -50 + i * 25);
+      art.makeFrame(8, 8);
+      art.frame.position.set( -(planeWidth * scale)/2 + 0.05, 3.5, 50 - (i * 25));
       art.frame.rotation.y = Math.PI/2;
 
+
       const spotLight = new THREE.SpotLight( 0xcfcfcf );
-      spotLight.position.set( -(planeWidth * scale)/2 + 15, 10, -50 + i * 25 );
-      spotLight.target = kanagawa.frame;
+      spotLight.position.set( -(planeWidth * scale)/2 + 15, 10, 50 - (i * 25));
+      mainScene.add( spotLight );
+      spotLight.target = art.frame;
+      spotLight.angle = Math.PI/5.5;
       spotLight.penumbra = 1;
 
       mainScene.add(art.frame);
+
     }
   }
-  */
 
 
   {
-    gogh = new Art();
+    /*
+    const gogh = new Art();
 
 
     const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 );
 
     gogh.loadTexture('./images/gogh.jpg');
 
+    
     gogh.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     gogh.texture.matrixAutoUpdate = false;
     gogh.texture.wrapS = gogh.texture.wrapT = THREE.RepeatWrapping;
@@ -289,7 +290,7 @@ function init() {
     gogh.composer.renderTarget2.texture.matrixAutoUpdate = false;
     gogh.composer.renderTarget2.texture.wrapS = gogh.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
     gogh.composer.renderTarget2.texture.matrix.scale(4, 4);
-
+    
     const geometry = new THREE.BoxGeometry(10, 10, 10);
     const material = new THREE.MeshPhongMaterial({
       map: gogh.texture,
@@ -311,10 +312,12 @@ function init() {
     console.log(box);
 
     mainScene.add(box);
+    */
+    
   }
 
   {
-
+    /*
     kanagawa = new Art();
     //kanagawa.composer.renderer.autoClearColor = false;
     console.log(kanagawa);
@@ -352,33 +355,13 @@ function init() {
     oct.position.set(0, 5, 12.5);
     oct.rotation.y -= Math.PI/2;
     mainScene.add( oct );
+    */
   }
-
-
-
-  {
-    const spotLight = new THREE.SpotLight( 0xcfcfcf );
-    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,0);
-    mainScene.add( spotLight );
-    spotLight.target = gamerjibeMesh;
-    spotLight.penumbra = 1;
-  }
-
-  ///other images////
-  const polkaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
-  const polkaMaterial = new THREE.MeshPhongMaterial({
-    side: THREE.DoubleSide,
-  });
-
-  const polkaMesh = new THREE.Mesh(polkaGeometry, polkaMaterial);
-  polkaMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,25);
-  polkaMesh.rotation.y = Math.PI/2;
-  polkaMesh.material.map = polkaDots;
 
   {
     const monet = new Art();
 
-    monet.loadTexture('./images/monet.jpg');
+    monet.loadTexture('./images/flowers_monet.jpg');
 
     monet.makeFrame(planeWidth * scale / 4, planeHeight * scale / 4);
     monet.frame.position.set(-(planeWidth * scale)/2 + 1,3,25);
@@ -389,131 +372,6 @@ function init() {
     //mainScene.add(monet.frame);
   }
 
-  {
-    const spotLight = new THREE.SpotLight( 0xcfcfcf );
-    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,25);
-    mainScene.add( spotLight );
-    spotLight.target = polkaMesh;
-    spotLight.angle = Math.PI/5.5;
-    spotLight.penumbra = 1;
-  }
-
-  const hexaGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
-  const hexaMaterial = new THREE.MeshPhongMaterial({
-    side: THREE.DoubleSide,
-  });
-
-  const hexaMesh = new THREE.Mesh(hexaGeometry, hexaMaterial);
-  hexaMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,50);
-  hexaMesh.rotation.y = Math.PI/2;
-  hexaMesh.material.map = hexagons;
-  {
-    const spotLight = new THREE.SpotLight( 0xcfcfcf );
-    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,50);
-    mainScene.add( spotLight );
-    spotLight.target = hexaMesh;
-    spotLight.angle = Math.PI/5.5;
-    spotLight.penumbra = 1;
-  }
-
-  const chevGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
-  const chevMaterial = new THREE.MeshPhongMaterial({
-    side: THREE.DoubleSide,
-  });
-
-  const chevronMesh = new THREE.Mesh(chevGeometry, chevMaterial);
-  chevronMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,-25);
-  chevronMesh.rotation.y = Math.PI/2;
-  chevronMesh.material.map = chevron;
-  {
-    const spotLight = new THREE.SpotLight( 0xcfcfcf );
-    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,-25);
-    mainScene.add( spotLight );
-    spotLight.target = chevronMesh;
-    spotLight.angle = Math.PI/5.5;
-    spotLight.penumbra = 1;
-  }
-
-  const checksGeometry = new THREE.PlaneGeometry(planeWidth * scale / 4, planeHeight * scale / 4);
-  const checksMaterial = new THREE.MeshPhongMaterial({
-    //color: "purple",
-    side: THREE.DoubleSide,
-  });
-
-  const checksMesh = new THREE.Mesh(checksGeometry, checksMaterial);
-  checksMesh.position.set(-(planeWidth * scale)/2 + 0.05,3,-50);
-  checksMesh.rotation.y = Math.PI/2;
-  checksMesh.material.map = checks;
-  {
-    const spotLight = new THREE.SpotLight( 0xcfcfcf );
-    spotLight.position.set( -(planeWidth * scale)/2 + 15,10,-50);
-    mainScene.add( spotLight );
-    spotLight.target = checksMesh;
-    spotLight.angle = Math.PI/5.5;
-    spotLight.penumbra = 1;
-  }
-
-
-  ///add art to scene!
-  mainScene.add(gamerjibeMesh);
-  mainScene.add(polkaMesh);
-  mainScene.add(hexaMesh);
-  mainScene.add(chevronMesh);
-  mainScene.add(checksMesh);
-
-  //add art to artworks array
-  artworks.push(gamerjibeMesh, polkaMesh, hexaMesh, chevronMesh, checksMesh);
-
-  //for each artwork created its render Target scene
-  for(const art of artworks) {
-
-    const filmRenderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
-
-    let artScene = makeArtScene(art.material.map); 
-    let artComposer = makeFilmComposer(artScene, filmRenderTarget)
-    renderTargets.push({
-      "root": artScene,
-      "composer": artComposer
-    });
-  }
-
-  for(let i = 0; i < artworks.length; i++) {
-    artworks[i].material.map = renderTargets[i].composer.renderTarget2.texture;
-  }
-
-
-  const borderGeometry = new THREE.PlaneGeometry((planeWidth * scale / 4) + 0.2, (planeHeight * scale / 4) + 0.2);
-  const borderMaterial = new THREE.MeshPhongMaterial({
-    color: "black"
-  });
-  const borderPlane = new THREE.Mesh(borderGeometry, borderMaterial);
-  borderPlane.position.set(-(planeWidth * scale)/2 + 0.003,3,0);
-  borderPlane.rotation.y = Math.PI/2;
-  mainScene.add(borderPlane);
-
-  const ballGeometry = new THREE.SphereGeometry(100, 32, 32);
-  ballMaterial = new THREE.MeshNormalMaterial({
-    wireframe: true,
-    side: THREE.DoubleSide
-  })
-  ball = new THREE.Mesh(ballGeometry, ballMaterial);
-  ball.position.set(0,0,-3);
-  mainScene.add(ball);
-
-
-  const boxGeometry = new THREE.BoxGeometry(50, 50, 150);
-  boxMaterial = new THREE.MeshPhongMaterial({
-    //color: "white",
-    map: gamerJibe,
-    side: THREE.DoubleSide,
-    wireframe: true
-  })
-  box = new THREE.Mesh(boxGeometry, boxMaterial);
-  box.position.set(0,0,0);
-  mainScene.add(box);
-
-
-
   mainComposer = new EffectComposer(renderer, mainRenderTarget);
   mainComposer.addPass(new RenderPass(mainScene, mainCamera));
   mainComposer.setSize(canvas.width, canvas.height);
@@ -521,7 +379,7 @@ function init() {
 
 
   ///////OBJ LOADER////////////////////////////////
-  renderTargets[3].root.scene.remove(renderTargets[3].root.scene.children[2]);
+  //renderTargets[3].root.scene.remove(renderTargets[3].root.scene.children[2]);
   mtlLoader = new MTLLoader();
   mtlLoader.load('models/windmill_001.mtl', (mtl) => {
     mtl.preload();
@@ -530,7 +388,7 @@ function init() {
     objLoader.setMaterials(mtl);
     objLoader.load('models/windmill_001.obj', (root) => {
       root.position.set(0,-10,0);
-      renderTargets[3].root.scene.add(root);
+      //renderTargets[3].root.scene.add(root);
     });
   });
 
@@ -538,8 +396,8 @@ function init() {
     const gltfLoader = new GLTFLoader();
     gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
       const root = gltf.scene;
-      kanagawa.scene.add(root);
-      console.log(root);
+      //kanagawa.scene.add(root);
+      //console.log(root);
       //console.log(dumpObject(root).join('\n'));
 
       // compute the box that contains all the stuff
@@ -582,24 +440,16 @@ function init() {
 function render() {
 
   controls.object = mainCamera;
-  for(let i = 0; i < renderTargets.length; i++) {
-    //renderTargets[i].composer.passes[0].renderToScreen = true
-    //renderTargets[i].composer.passes[1].enabled = true;
-    renderTargets[i].composer.render();
+  controls.enableRotate = true;
+  controls.minDistance = Math.PI;
+  controls.maxDistance = 35;
+  controls.update();
+
+  
+  for(const art of artworks) {
+    art.composer.passes[1].enabled = true;
+    art.composer.render();
   }
-
-  /*
-  for(let i = 0; i < artworks.length; i++) {
-    artworks[i].composer.passes[1].enabled = true;
-    artworks[i].composer.render();
-  }
-  */
-
-  kanagawa.composer.passes[1].enabled = true;
-  kanagawa.composer.render();
-
-  gogh.composer.passes[1].enabled = true;
-  gogh.composer.render();
 
 
   mainComposer.render();
@@ -612,27 +462,25 @@ function animate() {
 
   
   if(!CLICK) {
-      //renderTargets[0].composer.passes[1].enabled = true;
-      renderTargets[0].composer.render();
     render();
   } else {
-    controls.object = renderTargets[currentArtworkIndex].root.camera;  
-    renderTargets[currentArtworkIndex].composer.render();
+    controls.object = artworks[currentArtworkIndex].camera;  
+    controls.enableRotate = false;
+    controls.minDistance = 0.5;
+    controls.maxDistance = 15;
+    controls.update();
+
+
+    artworks[currentArtworkIndex].composer.render();
 
   }
-  
-  
-  oct.rotation.y += 0.01;
-  oct.rotation.x += 0.01;
-  gogh.scene.children[1].rotation.y += 0.01;
 
-  ball.rotation.y += 0.001;
-  ball.rotation.x += 0.001;
-  ball.rotation.z -= 0.001;
-  box.rotation.z += 0.005;
+  
+  //array of frames
+  frames = artworks.map(artwork => artwork.frame);
 
   raycaster.setFromCamera(mouse, mainCamera);
-  const intersects = raycaster.intersectObjects(artworks);
+  const intersects = raycaster.intersectObjects(frames);
 
   if ( intersects.length > 0 ) {
     if ( INTERSECTED != intersects[ 0 ].object ) {
@@ -686,7 +534,7 @@ function animate() {
 
 
     //renderTargets[4].root.scene.children[1].rotation.x += 0.001;
-    renderTargets[4].root.scene.children[2].rotation.y += 0.001;
+    //renderTargets[4].root.scene.children[2].rotation.y += 0.001;
     //renderTargets[4].root.scene.children[1].rotation.z += 0.001;
     //renderTargets[4].root.scene.add(ball)
     //renderTargets[4].root.scene.children[2].rotation.y += 0.02;
@@ -713,8 +561,9 @@ addEventListener('mousemove', (event) => {
 addEventListener('click', () => {
   if(INTERSECTED && !CLICK) {
 
-    currentArtworkIndex = (artworks.indexOf(INTERSECTED))
-    console.log(renderTargets[currentArtworkIndex])
+    //currentArtworkIndex = (artworks.indexOf(INTERSECTED))
+    currentArtworkIndex = (frames.indexOf(INTERSECTED))
+    //console.log(renderTargets[currentArtworkIndex])
 
     makeGui();
 
@@ -739,7 +588,7 @@ addEventListener('keydown', (e) => {
       break;
     case 67:
       if (renderTargets[currentArtworkIndex]) {
-        controls.object.position.set(0,-2,20)
+        //controls.object.position.set(0,-2,20)
       }
       //controls.update();
       break;
@@ -753,106 +602,9 @@ addEventListener('keydown', (e) => {
   }
 })
 
-function makeArtScene(texture) {
-  let artScene = {
-    scene: undefined, 
-    camera: undefined
-  }
-
-  //create render target Scene
-  const rtScene = new THREE.Scene();
-
-  //create render target Camera
-  let rtFov = 75;
-  const rtAspect = rtWidth / rtHeight;
-  const rtNear = 0.1;
-  const rtFar = 500;
-  let rtCamera = new THREE.PerspectiveCamera(rtFov, rtAspect, rtNear, rtFar);
-  rtCamera.position.z = 14;
-  
-  //add spotlights source to scene
-  {
-    const spotLight = new THREE.SpotLight( 0xffffff );
-    spotLight.position.set( 0, 14, 10 );
-
-    spotLight.castShadow = true;
-
-    spotLight.shadow.mapSize.width = 1024;
-    spotLight.shadow.mapSize.height = 1024;
-
-    spotLight.shadow.camera.near = 500;
-    spotLight.shadow.camera.far = 4000;
-    spotLight.shadow.camera.fov = 30;
-
-    rtScene.add( spotLight );
-  }
-
-  
-  //const ambientLight = new THREE.AmbientLight( 0xafafaf, 1 ); // soft white light
-  
-
-  //add floor plane
-  {
-    const floorSize = 100;
-  
-    const loader = new THREE.TextureLoader();
-    const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.magFilter = THREE.NearestFilter;
-    const repeats = floorSize / 2;
-    texture.repeat.set(repeats, repeats);
-  
-    const floorGeo = new THREE.PlaneGeometry(floorSize, floorSize);
-    const floorMat = new THREE.MeshPhongMaterial({
-      map: texture,
-      side: THREE.DoubleSide,
-    });
-    const mesh = new THREE.Mesh(floorGeo, floorMat);
-    mesh.position.set(0,-10.5,0);
-    mesh.rotation.x = Math.PI * -.5;
-    rtScene.add(mesh);
-  }
-
-
-  //add plane for texture 
-  const geometry = new THREE.PlaneGeometry(20, 20);
-  const material = new THREE.MeshPhongMaterial({
-    map: texture,
-    side: THREE.DoubleSide
-  });
-  const plane = new THREE.Mesh(geometry, material);
-  //rtScene.add( ambientLight );
-  rtScene.add( plane );
-
-
-  artScene.scene = rtScene;
-  artScene.camera = rtCamera;
-
-  return artScene;
-}
-
-function makeFilmComposer(artScene, renderTarget) {
-  //create composer targeting desired render target
-  let filmComposer = new EffectComposer(renderer, renderTarget);
-
-  //add render target scene and camera to composer using RenderPass
-  filmComposer.addPass(new RenderPass(artScene.scene, artScene.camera));
-  let filmPass = new FilmPass(
-		1,   // noise intensity
-		0.025,  // scanline intensity
-		648,    // scanline count
-		true,  // grayscale
-	);
-
-  filmComposer.addPass(filmPass);
-  filmComposer.setSize(innerWidth, innerHeight);
-  return filmComposer;
-}
-
 function makeGui() {
 
-  const currentScene = renderTargets[currentArtworkIndex];
+  const currentScene = artworks[currentArtworkIndex];
   gui = new dat.GUI();
   
   //FilmPass
@@ -878,7 +630,7 @@ function makeGui() {
   //spotLight example code from https://github.com/mrdoob/three.js/blob/master/examples/webgl_lights_spotlight.html
   {
     let folder2 = gui.addFolder('SpotLight');       
-    let spotLight = currentScene.root.scene.children[0];
+    let spotLight = currentScene.scene.children[0];
     const params = {
       'light color': spotLight.color.getHex(),
     };
@@ -1071,8 +823,8 @@ function makeCamera() {
 
 function makeComposer(scene, camera) {
 
-  const rtWidth = 512;
-  const rtHeight = 512;
+  const rtWidth = 1024;
+  const rtHeight = 1024;
   let rtParameters = { 
     minFilter: THREE.LinearFilter, 
     magFilter: THREE.LinearFilter, 
@@ -1080,7 +832,7 @@ function makeComposer(scene, camera) {
     stencilBuffer: false 
   };
 
-  const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
+  const renderTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, rtParameters);
 
   let composer = new EffectComposer(renderer, renderTarget);
   composer.addPass(new RenderPass(scene, camera));
@@ -1099,24 +851,3 @@ function makeComposer(scene, camera) {
   return composer;
 
 }
-
-
-function makeFrame(composer) {
-
-  const width = 2;
-  const height = 2;
-
-
-  const geometry = new THREE.PlaneGeometry(width, height);
-  let material = new THREE.MeshPhongMaterial({
-    map: composer.renderTarget2.texture,
-    side: THREE.DoubleSide
-  });
-
-  const frame = new THREE.Mesh(geometry, material);
-  
-  return frame;
-
-}
-
-
