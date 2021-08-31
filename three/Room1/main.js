@@ -93,8 +93,6 @@ class Art {
 
 }
 
-//let kanagawa, gogh, monet, oct;
-
 
 
 
@@ -124,6 +122,7 @@ function init() {
   renderer = new THREE.WebGLRenderer({
     preserveDrawingBuffer: true
   });
+  //renderer.autoClearColor = false;
   canvas = renderer.domElement;
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(devicePixelRatio);
@@ -431,7 +430,7 @@ function init() {
       objLoader.setMaterials(mtl);
       objLoader.load('models/windmill_001.obj', (root) => {
         windmill = root;
-        root.position.set( 0, 0, -37.5 );
+        root.position.set( 0, 0, -40 );
         mainScene.add(root);
       });
     });
@@ -567,7 +566,6 @@ function animate() {
     INTERSECTED = null;
   }
 
-  /*
   {
 
     if (points.length < 3) {
@@ -584,17 +582,12 @@ function animate() {
         points[points.length - 1]
       ]);
   
-  
-      let r = Math.random();
-      let g = Math.random();
-      let b = Math.random();
-  
       let newMat = new THREE.LineBasicMaterial();
   
       newLine = new THREE.Line(newGeo, newMat);
-      newLine.lookAt(new THREE.Vector3(0,0,0));
-      //newLine.rotation.x += 0.5;
-      kanagawa.scene.add(newLine);
+      //newLine.lookAt(new THREE.Vector3(0,0,0));
+      newLine.rotation.x += 0.5;
+      artworks[7].scene.add(newLine);
     }
   
     newLine.rotation.z += 2;
@@ -602,16 +595,6 @@ function animate() {
     newLine.rotation.x += 3;
 
   }
-  */
-
-
-
-    //renderTargets[4].root.scene.children[1].rotation.x += 0.001;
-    //renderTargets[4].root.scene.children[2].rotation.y += 0.001;
-    //renderTargets[4].root.scene.children[1].rotation.z += 0.001;
-    //renderTargets[4].root.scene.add(ball)
-    //renderTargets[4].root.scene.children[2].rotation.y += 0.02;
-    //renderTargets[4].root.scene.children[2].rotation.z += 0.001;
 
     
     
