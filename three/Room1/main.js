@@ -60,9 +60,6 @@ let points = [], line, newGeo, newMat, newLine;
 
 
 
-
-
-
 class Art { 
 
   constructor() {
@@ -292,14 +289,12 @@ function init() {
     const threeDGen = new Art();
     const randomGen = new Art();
 
-
-
     artworks.push(linesGen, circleGen, triangleGen, threeDGen, randomGen);
 
     for(let i = 5; i < artworks.length; i++) {
       const art = artworks[i];
 
-      //simple lighting
+      //art.scene.add(ambientLight);
       //add spotlights source to scene
       {
         const spotLight = new THREE.SpotLight( 0xffffff );
@@ -317,8 +312,13 @@ function init() {
         art.scene.add( spotLight );
       }
 
-
-      //art.scene.add(ambientLight);
+      if(i === 8) {
+        art.makeControls(canvas);
+        art.controls.enabled = true;
+        art.controls.target.set(0,0,0);
+        art.controls.autoRotate = true;
+        art.controls.autoRotateSpeed = 2;
+      }
 
       art.makeFrame(8, 8);
       art.frame.position.set( (planeWidth * scale) - 0.05, 3.5, 50 - ((i - 5) * 25));
@@ -505,7 +505,7 @@ function animate() {
       artworks[currentArtworkIndex].controls.enabled = true;
     }
 
-    if(currentArtworkIndex > 4) {
+    if(currentArtworkIndex === 7) {
       renderer.autoClearColor = false;
     } else {
       renderer.autoClearColor = true;
@@ -554,35 +554,8 @@ function animate() {
     INTERSECTED = null;
   }
 
-  {
-
-    if (points.length < 3) {
-      points.push(new THREE.Vector3(
-        getRandomIntInclusive(-3, 3),
-        getRandomIntInclusive(-2, 2),
-        getRandomIntInclusive(-10, 20)
-      ));
-      
-  
-      //console.log(points);
-      let newGeo = new THREE.BufferGeometry().setFromPoints([
-        points[points.length - 2],
-        points[points.length - 1]
-      ]);
-  
-      let newMat = new THREE.LineBasicMaterial();
-  
-      newLine = new THREE.Line(newGeo, newMat);
-      //newLine.lookAt(new THREE.Vector3(0,0,0));
-      newLine.rotation.x += 0.5;
-      artworks[7].scene.add(newLine);
-    }
-  
-    newLine.rotation.z += 2;
-    newLine.rotation.y += 3;
-    newLine.rotation.x += 3;
-
-  }
+  genLines();
+  genBalls();
 
     
     
@@ -652,7 +625,7 @@ function makeGui() {
     const params = {
       'light color': spotLight.color.getHex(),
     };
-    console.log(spotLight);
+
     folder2.addColor(params, 'light color').onChange( function ( val ) {
     
       spotLight.color.setHex( val );
@@ -748,8 +721,66 @@ function getRandomIntInclusive(min, max) {
 }
 
 
+function genLines() {
+  if (points.length < 3) {
+    points.push(new THREE.Vector3(
+      getRandomIntInclusive(-3, 3),
+      getRandomIntInclusive(-2, 2),
+      getRandomIntInclusive(-10, 20)
+    ));
+    
 
+    //console.log(points);
+    let newGeo = new THREE.BufferGeometry().setFromPoints([
+      points[points.length - 2],
+      points[points.length - 1]
+    ]);
 
+    let newMat = new THREE.LineBasicMaterial();
+
+    newLine = new THREE.Line(newGeo, newMat);
+    //newLine.lookAt(new THREE.Vector3(0,0,0));
+    newLine.rotation.x += 0.5;
+    artworks[7].scene.add(newLine);
+  }
+
+  newLine.rotation.z += 2;
+  newLine.rotation.y += 3;
+  newLine.rotation.x += 3;
+
+}
+
+function genBalls() {
+  artworks[8].controls.update();
+
+  let balls = [];
+
+  while(balls.length < 25) {
+    const color = new THREE.Color(Math.random(), Math.random(), Math.random());
+
+    const geometry = new THREE.SphereGeometry( 0.1, 16, 16 );
+    const material = new THREE.MeshBasicMaterial( { color: color} );
+    let sphere = new THREE.Mesh( geometry, material );
+    sphere.position.set(getRandomIntInclusive(-5, 5), getRandomIntInclusive(-5, 5), getRandomIntInclusive(-5, 5));
+
+    balls.push(sphere);
+    
+  }
+
+  for(const ball of balls) {
+    artworks[8].scene.add(ball);
+  }
+
+  for(const ball of artworks[8].scene.children) {
+    ball.position.z -= 0.035;
+
+    if(ball.position.z < -5) {
+      artworks[8].scene.remove(ball);
+    }
+  }
+  
+
+}
 
 
 
