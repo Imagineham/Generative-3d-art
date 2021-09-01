@@ -3,8 +3,11 @@ import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threej
 import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/controls/OrbitControls.js';
 import {EffectComposer} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/RenderPass.js';
-import * as dat from 'dat.gui';
 import {FilmPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/FilmPass.js';
+import {ShaderPass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/ShaderPass.js';
+import {PixelShader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/shaders/PixelShader.js';
+import {HalftonePass} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/postprocessing/HalftonePass.js';
+import * as dat from 'dat.gui';
 import {OBJLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/OBJLoader.js';
 import {MTLLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/MTLLoader.js';
 import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/loaders/GLTFLoader.js';
@@ -43,7 +46,7 @@ let artworks = [], renderTargets = [], frames = [], currentArtworkIndex;
 let goghBox, kanagawaTorus;
 
 //main camera parameters
-let fov, aspectRatio, near, far, controls; 
+let fov, aspectRatio, near, far, mainControls; 
 //loader
 let loader, objLoader, mtlLoader;
 
@@ -80,6 +83,16 @@ class Art {
     
     this.frame = new THREE.Mesh(geometry, material);
 
+  }
+
+  makeControls(canvas) {
+    let controls = new OrbitControls(this.camera, canvas);
+    controls.enabled = false;
+    controls.enableRotate = false;
+    controls.minDistance = 0.5;
+    controls.maxDistance = 25;
+
+    this.controls = controls;
   }
 
   loadTexture(string) {
@@ -133,7 +146,7 @@ function init() {
   raycaster = new THREE.Raycaster();
 
   //Orbit Controls
-  controls = new OrbitControls(mainCamera, canvas);
+  mainControls = new OrbitControls(mainCamera, canvas);
   mainCamera.position.set(1,0,0);
 
   //Loader init
@@ -200,8 +213,6 @@ function init() {
   mainScene.add(right);
 
 
-
-
   //2d art
   {
     const gogh = new Art();
@@ -209,6 +220,8 @@ function init() {
     const flowersMonet = new Art();
     const snowMonet = new Art();
     const footbridgeMonet = new Art();
+
+    console.log(gogh.composer);
 
     gogh.loadTexture('./images/gogh.jpg');
     kanagawa.loadTexture('./images/kanagawa.jpg');
@@ -253,6 +266,7 @@ function init() {
       art.frame.position.set( -(planeWidth * scale) + 0.05, 3.5, 50 - (i * 25));
       art.frame.rotation.y = Math.PI/2;
 
+      art.makeControls(canvas);
 
       const spotLight = new THREE.SpotLight( 0xcfcfcf );
       spotLight.position.set( -(planeWidth * scale) + 15, 10, 50 - (i * 25));
@@ -267,11 +281,7 @@ function init() {
   }
 
   //3d art
-  {
-
-  }
-
-
+  {}
 
 
   //Gen art
@@ -323,7 +333,6 @@ function init() {
       spotLight.penumbra = 1;
 
       mainScene.add(art.frame);
-      console.log(i);
 
     }
 
@@ -365,7 +374,6 @@ function init() {
     })
     const box = new THREE.Mesh(boxGeometry, boxMaterial);
     box.position.set(0, 5, 15);
-    console.log(box);
 
     mainScene.add(box);
     
@@ -398,30 +406,13 @@ function init() {
 
   }
 
-  {
-    const monet = new Art();
-
-    monet.loadTexture('./images/flowers_monet.jpg');
-
-    monet.makeFrame(planeWidth * scale / 4, planeHeight * scale / 4);
-    monet.frame.position.set(-(planeWidth * scale)/2 + 1,3,25);
-    monet.frame.rotation.y = Math.PI/2;
-
-    //artworks.push(monet);
-
-    //mainScene.add(monet.frame);
-  }
-
   mainComposer = new EffectComposer(renderer, mainRenderTarget);
   mainComposer.addPass(new RenderPass(mainScene, mainCamera));
   mainComposer.setSize(canvas.width, canvas.height);
   
 
-
   ///////OBJ LOADER////////////////////////////////
   {
-    let windmill;
-
     mtlLoader = new MTLLoader();
     mtlLoader.load('models/windmill_001.mtl', (mtl) => {
       mtl.preload();
@@ -429,15 +420,10 @@ function init() {
       objLoader = new OBJLoader();
       objLoader.setMaterials(mtl);
       objLoader.load('models/windmill_001.obj', (root) => {
-        windmill = root;
         root.position.set( 0, 0, -40 );
         mainScene.add(root);
       });
     });
-
-    
-
-
   }
 
   {
@@ -445,7 +431,6 @@ function init() {
     gltfLoader.load('https://threejsfundamentals.org/threejs/resources/models/cartoon_lowpoly_small_city_free_pack/scene.gltf', (gltf) => {
       const root = gltf.scene;
       mainScene.add(root);
-      console.log(root);
       root.position.set(6, 2, -12.5);
       root.scale.set(0.01, 0.01, 0.01);
       //console.log(dumpObject(root).join('\n'));
@@ -459,9 +444,9 @@ function init() {
 
       // set the camera to frame the box
       // update the Trackball controls to handle the new size
-      controls.maxDistance = boxSize * 10;
+      //controls.maxDistance = boxSize * 10;
       //controls.target.copy(boxCenter);
-      controls.update();
+      //controls.update();
     });
   }
 
@@ -484,50 +469,48 @@ function init() {
   line = new THREE.Line(geometry, material);
   line.geometry.verticesNeedUpdate = true;
 
-
+  console.log(artworks[1]);
 }
 
 function render() {
 
-  controls.object = mainCamera;
-  controls.enableRotate = true;
-  controls.maxDistance = Infinity;
-  controls.update();
+  mainControls.enabled = true;
+
+  //controls.object = mainCamera;
+  //controls.enableRotate = true;
+  //controls.maxDistance = Infinity;
 
   
   for(const art of artworks) {
-    art.composer.passes[1].enabled = true;
+    if(art.controls != undefined) {
+      art.controls.enabled = false;
+    }
     art.composer.render();
   }
 
   goghBox.composer.render();
   kanagawaTorus.composer.render();
 
-
+  //renderer.render(mainScene, mainCamera)
   mainComposer.render();
   CLICK = false;
 }
 
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
+  mainControls.update();
 
   
   if(!CLICK) {
     render();
   } else {
-    controls.object = artworks[currentArtworkIndex].camera;  
-    controls.enableRotate = false;
-    controls.minDistance = 0.5;
-    controls.maxDistance = 15;
-    controls.update();
-
-
+    mainControls.enabled = false;
+    artworks[currentArtworkIndex].controls.enabled = true;
     artworks[currentArtworkIndex].composer.render();
 
   }
 
-  goghBox.scene.children[1].rotation.y += 0.03;
+  goghBox.scene.children[1].rotation.y += 0.002;
 
   {
     if(kanagawaTorus.scene.children.length < 2) {
@@ -617,18 +600,11 @@ addEventListener('mousemove', (event) => {
 addEventListener('click', () => {
   if(INTERSECTED && !CLICK) {
 
-    //currentArtworkIndex = (artworks.indexOf(INTERSECTED))
     currentArtworkIndex = (frames.indexOf(INTERSECTED))
-    //console.log(renderTargets[currentArtworkIndex])
 
     makeGui();
-
-    //folder2.addColor(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'g').min(0).max(1);
-    //folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0].color, 'b').min(0).max(1);
-    //folder2.add(renderTargets[currentArtworkIndex].root.scene.children[0], 'intensity').min(0).max(1);
     CLICK = true;
   } else {
-    //CLICK = false;
   }
 })
 
@@ -663,25 +639,6 @@ function makeGui() {
   const currentScene = artworks[currentArtworkIndex];
   gui = new dat.GUI();
   
-  //FilmPass
-  {
-    let folder1 = gui.addFolder('FilmPass');
-    let myFilmPass = currentScene.composer.passes[1];
-
-    const params = {
-      'Noise Intensity': myFilmPass.uniforms.nIntensity,
-      'Scanline Intensity': myFilmPass.uniforms.sIntensity,
-      'Scanline Count': myFilmPass.uniforms.sCount,
-      'Grayscale': myFilmPass.uniforms.grayscale
-    }
-
-
-    folder1.add(myFilmPass, 'enabled');
-    folder1.add(params['Noise Intensity'], 'value', 0, 1).name('Noise Intensity');
-    folder1.add(params['Scanline Intensity'], 'value', 0, 1).name('Scanline Intensity');
-    folder1.add(params['Scanline Count'], 'value', 0, 4096).name('Scanline Count');
-    folder1.add(params['Grayscale'], 'value').name('Grayscale');
-  }
 
   //spotLight example code from https://github.com/mrdoob/three.js/blob/master/examples/webgl_lights_spotlight.html
   {
@@ -704,7 +661,59 @@ function makeGui() {
     //folder2.add( spotLight.shadow, 'focus', 0, 1 );
   }
 
-    //return gui;
+  //FilmPass
+  {
+    let folder1 = gui.addFolder('FilmPass');
+    let myFilmPass = currentScene.composer.passes[1];
+
+    const params = {
+      'Noise Intensity': myFilmPass.uniforms.nIntensity,
+      'Scanline Intensity': myFilmPass.uniforms.sIntensity,
+      'Scanline Count': myFilmPass.uniforms.sCount,
+      'Grayscale': myFilmPass.uniforms.grayscale
+    }
+
+
+    folder1.add(myFilmPass, 'enabled');
+    folder1.add(params['Noise Intensity'], 'value', 0, 1).name('Noise Intensity');
+    folder1.add(params['Scanline Intensity'], 'value', 0, 1).name('Scanline Intensity');
+    folder1.add(params['Scanline Count'], 'value', 0, 4096).name('Scanline Count');
+    folder1.add(params['Grayscale'], 'value').name('Grayscale');
+  }
+
+  //PixelPass
+  {
+    let folder3 = gui.addFolder('PixelPass');
+    let myPixelPass = currentScene.composer.passes[2];
+
+    const params = {
+      'Pixel Size': myPixelPass.uniforms.pixelSize,
+    }
+    folder3.add(myPixelPass, 'enabled');
+    folder3.add(params['Pixel Size'], 'value', 1, 32).name('Pixel Size');
+  }
+
+  //HalfTonePass
+  {
+    let folder4 = gui.addFolder('HalfTonePass');
+    let myHalfTonePass = currentScene.composer.passes[3];
+
+    const params = {
+      'Shape': myHalfTonePass.uniforms.shape,
+      'Radius': myHalfTonePass.uniforms.radius,
+      'Scatter': myHalfTonePass.uniforms.scatter,
+      'Blending': myHalfTonePass.uniforms.blending,
+      'Blending Mode': myHalfTonePass.uniforms.blendingMode
+    }
+
+    folder4.add(myHalfTonePass, 'enabled');
+    folder4.add(params['Shape'], 'value', {'Dot': 1, 'Ellipse': 2, 'Line': 3, 'Square': 4}).name('Shape');
+    folder4.add(params['Radius'], 'value', 1, 25).name('Radius');
+    folder4.add(params['Scatter'], 'value', 0, 1, 0.01).name('Scatter');
+    folder4.add(params['Blending'], 'value', 0, 1, 0.01).name('Blend');
+    folder4.add(params['Blending Mode'], 'value', { 'Linear': 1, 'Multiply': 2, 'Add': 3, 'Lighter': 4, 'Darker': 5 }).name('Blend Mode');
+
+  }
 
 
 }
@@ -891,18 +900,48 @@ function makeComposer(scene, camera) {
   const renderTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, rtParameters);
 
   let composer = new EffectComposer(renderer, renderTarget);
-  composer.addPass(new RenderPass(scene, camera));
 
+  //Pass 0- RenderPass
+  let renderPass = new RenderPass(scene, camera)
+
+  //Pass 1- FilmPass
   let filmPass = new FilmPass(
       1, //noise intensity
       0.025, //scanline intensity
       648, //scanline count
       true, //grayscale
   );
+  filmPass.enabled = false;
 
-  filmPass.enabled = true;
+  //Pass 2 -Pixelpass
+  let pixelPass = new ShaderPass( PixelShader );
+  pixelPass.uniforms[ "resolution" ].value = new THREE.Vector2( window.innerWidth, window.innerHeight );
+	pixelPass.uniforms[ "resolution" ].value.multiplyScalar( window.devicePixelRatio );
+  pixelPass.enabled = false;
 
+  //Pass 3- HalftonePass
+  const params = {
+    shape: 1,
+    radius: 4,
+    rotateR: Math.PI / 12,
+    rotateB: Math.PI / 12 * 2,
+    rotateG: Math.PI / 12 * 3,
+    scatter: 0,
+    blending: 1,
+    blendingMode: 1,
+    greyscale: false,
+    disable: false
+  };
+
+  let halftonePass = new HalftonePass(params);
+  //halftonePass.enabled = false;
+
+  //List of passes in order
+  composer.addPass(renderPass);
   composer.addPass(filmPass);
+  composer.addPass(pixelPass);
+  composer.addPass(halftonePass);
+
 
   return composer;
 
