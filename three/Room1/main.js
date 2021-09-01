@@ -469,29 +469,25 @@ function init() {
   line = new THREE.Line(geometry, material);
   line.geometry.verticesNeedUpdate = true;
 
-  console.log(artworks[1]);
 }
 
 function render() {
 
   mainControls.enabled = true;
-
-  //controls.object = mainCamera;
-  //controls.enableRotate = true;
-  //controls.maxDistance = Infinity;
+  renderer.autoClearColor = true;
 
   
   for(const art of artworks) {
     if(art.controls != undefined) {
       art.controls.enabled = false;
-    }
+    } 
+    art.composer.passes[3].enabled = true;
     art.composer.render();
   }
 
   goghBox.composer.render();
   kanagawaTorus.composer.render();
 
-  //renderer.render(mainScene, mainCamera)
   mainComposer.render();
   CLICK = false;
 }
@@ -505,7 +501,16 @@ function animate() {
     render();
   } else {
     mainControls.enabled = false;
-    artworks[currentArtworkIndex].controls.enabled = true;
+    if(artworks[currentArtworkIndex].controls != undefined) {
+      artworks[currentArtworkIndex].controls.enabled = true;
+    }
+
+    if(currentArtworkIndex > 4) {
+      renderer.autoClearColor = false;
+    } else {
+      renderer.autoClearColor = true;
+    }
+
     artworks[currentArtworkIndex].composer.render();
 
   }
