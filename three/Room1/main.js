@@ -404,8 +404,8 @@ function init() {
 
     {
       if(kanagawaTorus.scene.children.length < 2) {
-        for(let i = 0; i < 2; i++) {
-          const geometry = new THREE.CircleGeometry( 5, 32 );
+        for(let i = 0; i < 5; i++) {
+          const geometry = new THREE.CircleGeometry( 2, 16 );
           const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
           const circle = new THREE.Mesh( geometry, material );
           circle.position.set(
@@ -420,7 +420,7 @@ function init() {
     }
 
     //artworks[6] = kanagawaTorus;
-    //artworks[6].frame.material.map = kanagawaTorus.composer.renderTarget2.texture;
+    artworks[6].frame.material.map = kanagawaTorus.composer.renderTarget2.texture;
   }
 
   mainComposer = new EffectComposer(renderer, mainRenderTarget);
