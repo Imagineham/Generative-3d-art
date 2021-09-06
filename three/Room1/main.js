@@ -28,8 +28,8 @@ let spotlightBool = {
   helperEnabled: true
 }
 
-const rtWidth = 512;
-  const rtHeight = 512;
+const rtWidth = 1024;
+  const rtHeight = 1024;
   let rtParameters = { 
     minFilter: THREE.LinearFilter, 
     magFilter: THREE.LinearFilter, 
@@ -116,14 +116,14 @@ animate();
 function init() {
 
   //render targets!
-  const mainRenderTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, rtParameters);
+  const mainRenderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
 
   //Scene init
   mainScene = new THREE.Scene();
   
   //Camera init
   fov = 75;
-  aspectRatio = innerWidth/innerHeight;
+  aspectRatio = rtWidth/rtHeight;
   near = 0.1; 
   far = 1000;
   mainCamera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
@@ -933,7 +933,7 @@ function makeComposer(scene, camera) {
     stencilBuffer: false 
   };
 
-  const renderTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, rtParameters);
+  const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
 
   let composer = new EffectComposer(renderer, renderTarget);
 

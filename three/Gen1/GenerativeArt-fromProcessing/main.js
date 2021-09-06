@@ -2,9 +2,11 @@ import './style.css'
 import * as THREE from 'https://cdn.skypack.dev/three@0.129.0';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/controls/OrbitControls.js'
 
-let scene, camera, renderer, canvas;
-let points, geometry, material, line, newGeo, newMat, newLine;
-let WIDTH, HEIGHT;
+let scene, camera, renderer, canvas, controls;
+let points, geometry, material, line, newGeo, newMat, newLine, circle;
+
+const diameter = 2;
+const radius = diameter / 2;
 
 
 init();
@@ -28,19 +30,11 @@ function init() {
     preserveDrawingBuffer: true,
   });
   canvas = renderer.domElement;
-  WIDTH = canvas.innerWidth;
-  HEIGHT = canvas.innerHeight;
-  renderer.autoClearColor = false;
+  //renderer.autoClearColor = false;
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(devicePixelRatio);
   document.body.appendChild(renderer.domElement);
   window.addEventListener( 'resize', onWindowResize );
-
-  const random3 = new THREE.Vector3(
-    getRandomIntInclusive(-10, 10),
-    getRandomIntInclusive(-10, 10),
-    getRandomIntInclusive(-10, 10)
-  )
 
 
 
@@ -67,6 +61,8 @@ function init() {
   //console.log(line);
   //scene.add(line);
   console.log(points.length)
+
+
 }
 
 function render() {
@@ -77,6 +73,15 @@ function animate() {
   requestAnimationFrame(animate);
   render();  
  
+  //linesGen();
+  ballGen();
+  controls.update();
+
+
+  
+}
+
+function linesGen() {
   if (points.length < 3) {
     points.push(new THREE.Vector3(
       getRandomIntInclusive(-3, 3),
@@ -100,34 +105,55 @@ function animate() {
 
     newLine = new THREE.Line(newGeo, newMat);
     newLine.lookAt(new THREE.Vector3(0,0,0));
-    //newLine.rotation.x += 0.5;
+    newLine.rotation.x += 0.5;
     scene.add(newLine);
   }
 
   newLine.rotation.z += 2;
   newLine.rotation.y += 3;
   newLine.rotation.x += 3;
-  //newLine.scale.x += 0.1;;
-  //newLine.material.color.setRGB(r, g, b);
-
-  /*
-  
-  line.rotation.x += 0.5;
-  line.rotation.y += 1;
-  line.rotation.z += 2.5;
-  
-  */
-
-  //line.geometry.dispose();
-  //newLine.geometry = new THREE.BufferGeometry().setFromPoints(points);
-  //let color = new THREE.Color()
-
-  //line.material.color.setRGB(r, g, b);
-  //line.geometry.translate(-6, -8, -5);
-  //console.log(line.geometry.setAttribute('position', points));
-
-  
 }
+
+
+function ballGen() {
+
+  controls = new OrbitControls(camera, canvas);
+  controls.target.set(0,0,0);
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 2;
+
+  let balls = [];
+
+  while(balls.length < 25) {
+    const color = new THREE.Color(Math.random(), Math.random(), Math.random());
+
+    const geometry = new THREE.SphereGeometry( 0.1, 16, 16 );
+    const material = new THREE.MeshBasicMaterial( { color: color} );
+    let sphere = new THREE.Mesh( geometry, material );
+    sphere.position.set(getRandomIntInclusive(-3, 3), getRandomIntInclusive(-3, 3), getRandomIntInclusive(-3, 3));
+
+    balls.push(sphere);
+    
+  }
+
+  for(const ball of balls) {
+    scene.add(ball);
+  }
+
+  for(const ball of scene.children) {
+    ball.position.z -= 0.035;
+
+    if(ball.position.z < -5) {
+      scene.remove(ball);
+    }
+  }
+  
+
+}
+
+
+
+
 
 function onWindowResize() {
 
