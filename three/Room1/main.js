@@ -112,14 +112,14 @@ animate();
 function init() {
 
   //render targets!
-  const mainRenderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
+  const mainRenderTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, rtParameters);
 
   //Scene init
   mainScene = new THREE.Scene();
   
   //Camera init
   fov = 75;
-  aspectRatio = rtWidth/rtHeight;
+  aspectRatio = innerWidth/innerHeight;
   near = 0.1; 
   far = 1000;
   mainCamera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
