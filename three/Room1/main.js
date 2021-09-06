@@ -24,18 +24,14 @@ let mouse = {
 let gui;
 
 
-let spotlightBool = {
-  helperEnabled: true
-}
-
-const rtWidth = 512;
-  const rtHeight = 512;
-  let rtParameters = { 
-    minFilter: THREE.LinearFilter, 
-    magFilter: THREE.LinearFilter, 
-    format: THREE.RGBAFormat, 
-    stencilBuffer: false 
-  };
+const rtWidth = 1024;
+const rtHeight = 1024;
+let rtParameters = { 
+  minFilter: THREE.LinearFilter, 
+  magFilter: THREE.LinearFilter, 
+  format: THREE.RGBAFormat, 
+  stencilBuffer: false 
+};
 
 /* Array of Gallery Pieces
  * artworks will be passed into the raycaster so that 
@@ -263,6 +259,7 @@ function init() {
       art.frame.position.set( -(planeWidth * scale) + 0.05, 3.5, 50 - (i * 25));
       art.frame.rotation.y = Math.PI/2;
 
+
       art.makeControls(canvas);
 
       const spotLight = new THREE.SpotLight( 0xcfcfcf );
@@ -312,9 +309,10 @@ function init() {
         art.scene.add( spotLight );
       }
 
+
       if(i === 8) {
         art.makeControls(canvas);
-        art.controls.enabled = true;
+        art.controls.enabled = false;
         art.controls.target.set(0,0,0);
         art.controls.autoRotate = true;
         art.controls.autoRotateSpeed = 2;
@@ -388,7 +386,7 @@ function init() {
     kanagawaTorus.composer.renderTarget2.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     kanagawaTorus.composer.renderTarget2.texture.matrixAutoUpdate = false;
     kanagawaTorus.composer.renderTarget2.texture.wrapS = kanagawaTorus.composer.renderTarget2.texture.wrapT = THREE.RepeatWrapping;
-    kanagawaTorus.composer.renderTarget2.texture.matrix.scale(2, 2);
+    //kanagawaTorus.composer.renderTarget2.texture.matrix.scale(2, 2);
 
 
     kanagawaTorus.scene.add(ambientLight);
@@ -404,6 +402,25 @@ function init() {
     mainScene.add( torusKnot);
 
 
+    {
+      if(kanagawaTorus.scene.children.length < 2) {
+        for(let i = 0; i < 2; i++) {
+          const geometry = new THREE.CircleGeometry( 5, 32 );
+          const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+          const circle = new THREE.Mesh( geometry, material );
+          circle.position.set(
+            getRandomIntInclusive(-10, 10),
+            getRandomIntInclusive(-10, 10),
+            getRandomIntInclusive(-10, 10)
+          )
+  
+          kanagawaTorus.scene.add( circle );
+        }
+      }
+    }
+
+    //artworks[6] = kanagawaTorus;
+    //artworks[6].frame.material.map = kanagawaTorus.composer.renderTarget2.texture;
   }
 
   mainComposer = new EffectComposer(renderer, mainRenderTarget);
@@ -420,7 +437,7 @@ function init() {
       objLoader = new OBJLoader();
       objLoader.setMaterials(mtl);
       objLoader.load('models/windmill_001.obj', (root) => {
-        root.position.set( 0, 0, -40 );
+        root.position.set( 0, -1, -40 );
         mainScene.add(root);
       });
     });
@@ -481,6 +498,10 @@ function render() {
     if(art.controls != undefined) {
       art.controls.enabled = false;
     } 
+
+
+    art.camera.aspect = rtWidth / rtHeight;
+    art.camera.updateProjectionMatrix();
     art.composer.passes[3].enabled = true;
     art.composer.render();
   }
@@ -496,7 +517,7 @@ function animate() {
   requestAnimationFrame(animate);
   mainControls.update();
 
-  
+
   if(!CLICK) {
     render();
   } else {
@@ -511,29 +532,20 @@ function animate() {
       renderer.autoClearColor = true;
     }
 
+
+
+    if (currentArtworkIndex == 0 || currentArtworkIndex == 2) {
+      artworks[currentArtworkIndex].camera.aspect = 2;
+      artworks[currentArtworkIndex].camera.updateProjectionMatrix();
+    }
+
     artworks[currentArtworkIndex].composer.render();
 
   }
 
+  genLines();
+  genBalls();
   goghBox.scene.children[1].rotation.y += 0.002;
-
-  {
-    if(kanagawaTorus.scene.children.length < 2) {
-      for(let i = 0; i < 2; i++) {
-        const geometry = new THREE.CircleGeometry( 5, 32 );
-        const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
-        const circle = new THREE.Mesh( geometry, material );
-        circle.position.set(
-          getRandomIntInclusive(-10, 10),
-          getRandomIntInclusive(-10, 10),
-          getRandomIntInclusive(-10, 10)
-        )
-
-        kanagawaTorus.scene.add( circle );
-      }
-    }
-  }
-
 
 
   //array of frames
@@ -553,9 +565,6 @@ function animate() {
     if (INTERSECTED) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
     INTERSECTED = null;
   }
-
-  genLines();
-  genBalls();
 
     
     
@@ -579,7 +588,7 @@ addEventListener('click', () => {
   if(INTERSECTED && !CLICK) {
 
     currentArtworkIndex = (frames.indexOf(INTERSECTED))
-
+    
     makeGui();
     CLICK = true;
   } else {
@@ -595,12 +604,6 @@ addEventListener('keydown', (e) => {
         destroyGUI();
       }
       render();
-      break;
-    case 67:
-      if (renderTargets[currentArtworkIndex]) {
-        //controls.object.position.set(0,-2,20)
-      }
-      //controls.update();
       break;
     case 83: //'S' foir screenshot
       canvas.toBlob((blob) => {
@@ -619,24 +622,26 @@ function makeGui() {
   
 
   //spotLight example code from https://github.com/mrdoob/three.js/blob/master/examples/webgl_lights_spotlight.html
-  {
-    let folder2 = gui.addFolder('SpotLight');       
-    let spotLight = currentScene.scene.children[0];
-    const params = {
-      'light color': spotLight.color.getHex(),
-    };
+  if(currentArtworkIndex != 6) {
+    {
+      let folder2 = gui.addFolder('SpotLight');       
+      let spotLight = currentScene.scene.children[0];
+      const params = {
+        'light color': spotLight.color.getHex(),
+      };
 
-    folder2.addColor(params, 'light color').onChange( function ( val ) {
-    
-      spotLight.color.setHex( val );
+      folder2.addColor(params, 'light color').onChange( function ( val ) {
+      
+        spotLight.color.setHex( val );
 
-    });
-    folder2.add( spotLight, 'intensity', 0, 2 )
-    folder2.add( spotLight, 'distance', 50, 200 );
-    folder2.add( spotLight, 'angle', 0, Math.PI / 3 );
-    folder2.add( spotLight, 'penumbra', 0, 1 );
-    //folder2.add( spotLight, 'decay', 1, 2 );
-    //folder2.add( spotLight.shadow, 'focus', 0, 1 );
+      });
+      folder2.add( spotLight, 'intensity', 0, 2 )
+      folder2.add( spotLight, 'distance', 50, 200 );
+      folder2.add( spotLight, 'angle', 0, Math.PI / 3 );
+      folder2.add( spotLight, 'penumbra', 0, 1 );
+      //folder2.add( spotLight, 'decay', 1, 2 );
+      //folder2.add( spotLight.shadow, 'focus', 0, 1 );
+    }
   }
 
   //FilmPass
@@ -771,6 +776,16 @@ function genBalls() {
     artworks[8].scene.add(ball);
   }
 
+  for(let i = 1; i < artworks[8].scene.children.length; i++) {
+    let ball = artworks[8].scene.children[i];
+
+    ball.position.z -= 0.035;
+
+    if(ball.position.z < -5) {
+      artworks[8].scene.remove(ball);
+    }
+  }
+  /*
   for(const ball of artworks[8].scene.children) {
     ball.position.z -= 0.035;
 
@@ -778,6 +793,7 @@ function genBalls() {
       artworks[8].scene.remove(ball);
     }
   }
+  */
   
 
 }
@@ -865,45 +881,6 @@ function draw( drawContext, x, y ) {
 */
 
 
-/*
-class Art { 
-
-  constructor() {
-    this.scene = makeScene();
-    this.camera = makeCamera();
-    this.composer = makeComposer(this.scene, this.camera);
-    this.frame = makeFrame(this.composer);
-  }
-
-  makeFrame(width, height) {
-
-    const width = 2;
-    const height = 2;
-
-
-    const geometry = new THREE.PlaneGeometry(width, height);
-    let material = new THREE.MeshPhongMaterial({
-      map: this.composer.renderTarget2.texture,
-      side: THREE.DoubleSide
-    });
-    
-    this.frame = new THREE.Mesh(geometry, material);
-
-  }
-
-  loadTexture(string) {
-    const loader = new THREE.TextureLoader();
-    this.texture = loader.load(string);
-  }
-
-  loadObject(mesh) {
-    this.mesh = mesh;
-  }
-
-}
-*/
-
-
 function makeScene() {
 
   return new THREE.Scene();
@@ -911,7 +888,13 @@ function makeScene() {
 
 function makeCamera() {
   const fov = 75; 
-  const aspect = innerWidth / innerHeight;
+
+  /* We use let for aspect so we can change its value depending 
+   * on image. Some images are narrower than they are wide, and others 
+   * vice versa, so changing the aspect ratio for different images
+   * gives us flexibility
+   */
+  let aspect = rtWidth / rtHeight;
   const near = 0.1;
   const far = 500;
 
@@ -924,16 +907,7 @@ function makeCamera() {
 
 function makeComposer(scene, camera) {
 
-  const rtWidth = 1024;
-  const rtHeight = 1024;
-  let rtParameters = { 
-    minFilter: THREE.LinearFilter, 
-    magFilter: THREE.LinearFilter, 
-    format: THREE.RGBAFormat, 
-    stencilBuffer: false 
-  };
-
-  const renderTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, rtParameters);
+  const renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight, rtParameters);
 
   let composer = new EffectComposer(renderer, renderTarget);
 
